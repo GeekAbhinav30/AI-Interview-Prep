@@ -19,7 +19,7 @@ from backend.services.resume_service import (
     get_chunks,
 )
 
-from backend.services.gemini_service import generate_questions
+from backend.services.llm import generate_questions
 
 # ✅ FIXED: utils import
 from backend.utils.logger import debug_log, log_event
