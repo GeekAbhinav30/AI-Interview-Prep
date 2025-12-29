@@ -23,7 +23,7 @@ def log_event(event: str, detail: str = ""):
         writer.writerow([ts, event, detail])
 
 # Debug logging setup
-DEBUG_LOG_PATH = r"c:\Harsh\Desktop\automateinterview\.cursor\debug.log"
+DEBUG_LOG_PATH = r"c:\Harsh\Desktop\automateinterview\.Debugger\debug.log"
 
 def debug_log(location, message, data=None, hypothesis_id=None):
     """Write debug log in NDJSON format"""
