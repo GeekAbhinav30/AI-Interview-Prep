@@ -49,7 +49,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
         if (videoRef.current) videoRef.current.srcObject = stream;
         setCameraEnabled(true);
         
-        // Start monitoring when camera is enabled during interview
+        
         if (showQuestions && !monitoringActive) {
           await startMonitoring();
         }
