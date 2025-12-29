@@ -44,7 +44,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const toggleCamera = async () => {
     try {
       if (!cameraEnabled) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         setMediaStream(stream);
         if (videoRef.current) videoRef.current.srcObject = stream;
         setCameraEnabled(true);
@@ -199,25 +199,50 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   };
 
   const startRecording = async () => {
-    try {
-      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(audioStream);
-      const chunks: BlobPart[] = [];
+  try {
+    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
-        setRecordings(prev => ({ ...prev, [currentQuestionIndex]: blob }));
-        audioStream.getTracks().forEach(track => track.stop());
-      };
+    // ✅ FIX 2: Choose a browser-supported mime type
+    const mimeType =
+      MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
 
-      recorder.start();
-      mediaRecorderRef.current = recorder;
-      setIsRecording(true);
-    } catch (err) {
-      setError("Could not access microphone.");
-    }
-  };
+    // ✅ Create MediaRecorder WITH mimeType
+    const recorder = new MediaRecorder(audioStream, { mimeType });
+
+    const chunks: BlobPart[] = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      // ✅ FIX 1 already applied correctly here
+      const blob = new Blob(chunks, { type: recorder.mimeType });
+       console.log("Recorded audio MIME type:", blob.type);
+
+      setRecordings(prev => ({
+        ...prev,
+        [currentQuestionIndex]: blob
+      }));
+
+      // Stop mic
+      audioStream.getTracks().forEach(track => track.stop());
+    };
+
+    recorder.start();
+    mediaRecorderRef.current = recorder;
+    setIsRecording(true);
+
+  } catch (err) {
+    console.error(err);
+    setError("Could not access microphone.");
+  }
+};
+
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
@@ -226,19 +251,38 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  const playRecording = () => {
-    const recording = recordings[currentQuestionIndex];
-    if (recording && audioRef.current) {
-      const url = URL.createObjectURL(recording);
-      audioRef.current.src = url;
-      audioRef.current.play();
+ const playRecording = () => {
+  const recording = recordings[currentQuestionIndex];
+
+  if (!recording || !audioRef.current) {
+    console.warn("No recording or audio element");
+    return;
+  }
+
+  const audioEl = audioRef.current;
+  const url = URL.createObjectURL(recording);
+
+  audioEl.src = url;
+
+  // 🔊 IMPORTANT FIXES
+  audioEl.muted = false;
+  audioEl.volume = 1.0;
+  audioEl.currentTime = 0;
+
+  audioEl
+    .play()
+    .then(() => {
       setIsPlaying(true);
-      audioRef.current.onended = () => {
-        setIsPlaying(false);
-        URL.revokeObjectURL(url);
-      };
-    }
+    })
+    .catch((err) => {
+      console.error("Audio playback failed:", err);
+    });
+
+  audioEl.onended = () => {
+    setIsPlaying(false);
+    URL.revokeObjectURL(url);
   };
+};
 
   const stopPlaying = () => {
     if (audioRef.current) {
@@ -329,7 +373,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
           
           {cameraEnabled && (
             <p className="text-xs text-center mt-3 text-yellow-500">
-              ⚠️ Anti-cheating monitoring is active
+              ⚠️ Your session is being proctored.
             </p>
           )}
         </div>
