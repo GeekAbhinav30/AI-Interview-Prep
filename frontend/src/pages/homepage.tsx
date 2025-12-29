@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronRight, Upload, MessageSquare, Target, Zap, ArrowRight, Moon, Sun, Sparkles } from 'lucide-react';
 
 const HomePage = () => {
   const [isDark, setIsDark] = useState(true);
-  const [currentPage, setCurrentPage] = useState('home');
-
+  
   const theme = {
     dark: {
       bg: 'bg-black',
