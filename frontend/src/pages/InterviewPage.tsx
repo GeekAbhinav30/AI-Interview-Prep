@@ -457,8 +457,10 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   }
 
   return (
-    <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex items-center justify-center overflow-hidden`} style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
-      
+    <div
+  className={`min-h-[90vh] w-full transition-all duration-700 ${t.bg} ${t.text} flex justify-center overflow-hidden`}
+>
+
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {isDark ? (
           <>

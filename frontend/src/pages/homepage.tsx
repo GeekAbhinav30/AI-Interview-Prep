@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform} from 'framer-motion';
 import { ArrowRight, Sparkles, Video, Mic, Brain, Zap, Shield, TrendingUp } from 'lucide-react';
 
@@ -6,6 +7,7 @@ const HomePage = () => {
   const [isDark, setIsDark] = useState(true);
   const macbookRef = useRef(null);
   const heroRef = useRef(null);
+  const navigate = useNavigate();
   
   const { scrollYProgress } = useScroll({
     target: macbookRef,
@@ -17,16 +19,15 @@ const HomePage = () => {
     offset: ["start start", "end start"]
   });
 
-  const lid = useTransform(scrollYProgress, [0, 0.25, 0.5], [65, 15, 0]);
+   const lid = useTransform(scrollYProgress, [0, 0.35, 0.65], [75, 20, 0]);
   const lidRotate = lid;
   
-  const macScale = useTransform(scrollYProgress, [0, 0.3, 0.6], [0.75, 0.95, 1]);
-  const macOpacity = useTransform(scrollYProgress, [0, 0.2], [0.4, 1]);
+  const macScale = useTransform(scrollYProgress, [0, 0.4, 0.7], [0.7, 0.92, 1]);
+  const macOpacity = useTransform(scrollYProgress, [0, 0.25], [0.3, 1]);
   
-  const screenGlow = useTransform(scrollYProgress, [0.2, 0.4], [0, 1]);
-  const screenContent = useTransform(scrollYProgress, [0.3, 0.5], [0, 1]);
-  const contentY = useTransform(scrollYProgress, [0.35, 0.5], [30, 0]);
-  
+  const screenGlow = useTransform(scrollYProgress, [0.3, 0.55], [0, 1]);
+  const screenContent = useTransform(scrollYProgress, [0.4, 0.65], [0, 1]);
+  const contentY = useTransform(scrollYProgress, [0.45, 0.65], [40, 0]);
   const heroY = useTransform(heroProgress, [0, 1], [0, -120]);
   const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
 
@@ -203,6 +204,7 @@ const HomePage = () => {
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               letterSpacing: '-0.01em',
               fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+              
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = theme.accentHover;
@@ -211,7 +213,8 @@ const HomePage = () => {
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = theme.accent;
               e.currentTarget.style.transform = 'scale(1)';
-            }}>
+            }}
+            onClick={() => navigate('/start-practicing')}>
               Get started
             </button>
           </div>
@@ -286,31 +289,35 @@ const HomePage = () => {
             </p>
             
             <motion.button
-              style={{
-                backgroundColor: theme.accent,
-                color: '#fff',
-                padding: '14px 32px',
-                borderRadius: '980px',
-                fontSize: '17px',
-                fontWeight: 500,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                letterSpacing: '-0.015em',
-                boxShadow: isDark ? '0 4px 24px rgba(0, 113, 227, 0.25)' : '0 4px 24px rgba(0, 113, 227, 0.15)',
-                fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accent}
-            >
-              Start practicing
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </motion.button>
+  style={{
+    backgroundColor: theme.accent,
+    color: '#fff',
+    padding: '14px 32px',
+    borderRadius: '980px',
+    fontSize: '17px',
+    fontWeight: 500,
+    border: 'none',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    letterSpacing: '-0.015em',
+    boxShadow: isDark
+      ? '0 4px 24px rgba(0, 113, 227, 0.25)'
+      : '0 4px 24px rgba(0, 113, 227, 0.15)',
+    fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+  }}
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+  transition={{ duration: 0.15 }}
+  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHover}
+  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accent}
+  onClick={() => navigate('/start-practicing')}   // ✅ THIS WAS MISSING
+>
+  Start practicing
+  <ArrowRight size={18} strokeWidth={2.5} />
+</motion.button>
+
           </motion.div>
         </div>
       </motion.section>
@@ -983,6 +990,7 @@ const HomePage = () => {
               transition={{ duration: 0.15 }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHover}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accent}
+              onClick={() => navigate('/start-practicing')}
             >
               Get started now
               <ArrowRight size={19} strokeWidth={2.5} />
