@@ -103,27 +103,31 @@ const HomePage = () => {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              background: 'linear-gradient(135deg, #0071e3 0%, #005bb5 100%)',
-              borderRadius: '7px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 113, 227, 0.3)'
-            }}>
-              <Sparkles size={14} color="#fff" strokeWidth={2.5} />
-            </div>
-            <span style={{
-              fontSize: '17px',
-              fontWeight: 600,
-              letterSpacing: '-0.022em',
-              color: theme.text,
-              fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>InterviewPro</span>
-          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+  {/* Logo Image */}
+  <img
+    src="/Logoo.png"
+    alt="IntervStack Logo"
+    style={{
+      width: '28px',
+      height: '28px',
+      borderRadius: '6px',
+      objectFit: 'contain'
+    }}
+  />
+
+  {/* App Name */}
+  <span style={{
+    fontSize: '17px',
+    fontWeight: 600,
+    letterSpacing: '-0.022em',
+    color: theme.text,
+    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
+  }}>
+    IntervStack
+  </span>
+</div>
+
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <a href="#features" style={{ 
@@ -144,6 +148,15 @@ const HomePage = () => {
               cursor: 'pointer',
               fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
             }}>How it works</a>
+             <a onClick={() => navigate('/pricing')} style={{ 
+  fontSize: '14px', 
+  fontWeight: 500, 
+  color: theme.textSecondary,
+  textDecoration: 'none',
+  transition: 'color 0.2s',
+  cursor: 'pointer',
+  fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+}}>Pricing</a>
             
             <button
               onClick={() => setIsDark(!isDark)}
@@ -547,8 +560,10 @@ const HomePage = () => {
                         gap: '18px',
                         marginTop: 'auto'
                       }}>
+                        
                         <div style={{
                           aspectRatio: '16/9',
+                          
                           background: isDark
                             ? 'linear-gradient(135deg, #1a1a1c 0%, #0f0f10 100%)'
                             : 'linear-gradient(135deg, #d1d1d6 0%, #b4b4b9 100%)',
@@ -560,13 +575,26 @@ const HomePage = () => {
                             ? 'inset 0 2px 8px rgba(0, 0, 0, 0.4)'
                             : 'inset 0 2px 8px rgba(0, 0, 0, 0.1)'
                         }}>
+<img
+  src="/mock-video.png"
+  alt="preview"
+  style={{
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  }}
+/>
                           <div style={{
                             position: 'absolute',
                             inset: 0,
                             background: isDark 
+                            
                               ? 'radial-gradient(circle at 30% 40%, rgba(0, 113, 227, 0.08) 0%, transparent 60%)'
                               : 'radial-gradient(circle at 30% 40%, rgba(0, 113, 227, 0.04) 0%, transparent 60%)'
                           }} />
+                          
                           <div style={{
                             position: 'absolute',
                             bottom: '14px',
@@ -574,6 +602,7 @@ const HomePage = () => {
                             display: 'flex',
                             gap: '10px'
                           }}>
+                            
                             <div style={{
                               padding: '7px 12px',
                               background: 'rgba(0, 0, 0, 0.6)',
@@ -584,6 +613,7 @@ const HomePage = () => {
                               gap: '7px',
                               border: '1px solid rgba(255, 255, 255, 0.15)'
                             }}>
+                              
                               <Video size={13} color="#fff" strokeWidth={2.5} />
                               <span style={{ fontSize: '12px', color: '#fff', fontWeight: 700, fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif' }}>HD</span>
                             </div>
@@ -674,6 +704,7 @@ const HomePage = () => {
   justifyContent: 'center',
   transition: 'all 0.3s ease'
 }}>
+  
   <svg 
     width="26" 
     height="30" 
@@ -819,6 +850,7 @@ const HomePage = () => {
                   marginBottom: '24px',
                   border: `1px solid ${feature.color}30`
                 }}>
+                  
                   <feature.icon size={28} color={feature.color} strokeWidth={2} />
                 </div>
                 <h3 style={{
@@ -1015,33 +1047,32 @@ const HomePage = () => {
             gap: '10px',
             marginBottom: '20px'
           }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              background: 'linear-gradient(135deg, #0071e3 0%, #005bb5 100%)',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 12px rgba(0, 113, 227, 0.25)'
-            }}>
-              <Sparkles size={16} color="#fff" strokeWidth={2.5} />
-            </div>
+            <img
+    src="/Logoo.png"
+    alt="IntervStack Logo"
+    style={{
+      width: '28px',
+      height: '28px',
+      borderRadius: '6px',
+      objectFit: 'contain'
+    }}
+  />
             <span style={{
               fontSize: '19px',
               fontWeight: 600,
               letterSpacing: '-0.022em',
               color: theme.text,
               fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>InterviewPro</span>
+            }}>IntervStack</span>
           </div>
+          
           <p style={{
             fontSize: '14px',
             color: theme.textSecondary,
             margin: 0,
             fontWeight: 400,
             fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-          }}>© 2025 InterviewPro. All rights reserved.</p>
+          }}>© 2026 IntervStack. All rights reserved.</p>
         </div>
       </footer>
 
