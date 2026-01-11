@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform} from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { ArrowRight, Sparkles, Video, Mic, Brain, Zap, Shield, TrendingUp } from 'lucide-react';
 
 const HomePage = () => {
@@ -19,16 +19,37 @@ const HomePage = () => {
     offset: ["start start", "end start"]
   });
 
-   const lid = useTransform(scrollYProgress, [0, 0.35, 0.65], [75, 20, 0]);
+  const lid = useSpring(
+    useTransform(scrollYProgress, [0, 0.35, 0.65], [75, 20, 0]),
+    { stiffness: 100, damping: 30, mass: 0.5 }
+  );
   const lidRotate = lid;
   
-  const macScale = useTransform(scrollYProgress, [0, 0.4, 0.7], [0.7, 0.92, 1]);
-  const macOpacity = useTransform(scrollYProgress, [0, 0.25], [0.3, 1]);
+  const macScale = useSpring(
+    useTransform(scrollYProgress, [0, 0.4, 0.7], [0.7, 0.92, 1]),
+    { stiffness: 80, damping: 25 }
+  );
+  const macOpacity = useSpring(
+    useTransform(scrollYProgress, [0, 0.25], [0.3, 1]),
+    { stiffness: 100, damping: 30 }
+  );
   
-  const screenGlow = useTransform(scrollYProgress, [0.3, 0.55], [0, 1]);
-  const screenContent = useTransform(scrollYProgress, [0.4, 0.65], [0, 1]);
-  const contentY = useTransform(scrollYProgress, [0.45, 0.65], [40, 0]);
-  const heroY = useTransform(heroProgress, [0, 1], [0, -120]);
+  const screenGlow = useSpring(
+    useTransform(scrollYProgress, [0.3, 0.55], [0, 1]),
+    { stiffness: 60, damping: 20 }
+  );
+  const screenContent = useSpring(
+    useTransform(scrollYProgress, [0.4, 0.65], [0, 1]),
+    { stiffness: 80, damping: 25 }
+  );
+  const contentY = useSpring(
+    useTransform(scrollYProgress, [0.45, 0.65], [40, 0]),
+    { stiffness: 100, damping: 30 }
+  );
+  const heroY = useSpring(
+    useTransform(heroProgress, [0, 1], [0, -120]),
+    { stiffness: 100, damping: 30 }
+  );
   const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
 
   const theme = {
@@ -82,18 +103,23 @@ const HomePage = () => {
         zIndex: 0
       }} />
       
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        backdropFilter: 'saturate(180%) blur(20px)',
-        backgroundColor: isDark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(255, 255, 255, 0.72)',
-        borderBottom: `1px solid ${theme.border}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-      }}>
+      <motion.nav 
+        initial={{ y: -52, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(255, 255, 255, 0.72)',
+          borderBottom: `1px solid ${theme.border}`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+      >
         <div style={{
           maxWidth: '1280px',
           margin: '0 auto',
@@ -103,63 +129,65 @@ const HomePage = () => {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-  {/* Logo Image */}
-  <img
-    src="/Logoo.png"
-    alt="IntervStack Logo"
-    style={{
-      width: '28px',
-      height: '28px',
-      borderRadius: '6px',
-      objectFit: 'contain'
-    }}
-  />
+          <motion.div 
+            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <img
+              src="/Logoo.png"
+              alt="IntervStack Logo"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                objectFit: 'contain'
+              }}
+            />
 
-  {/* App Name */}
-  <span style={{
-    fontSize: '17px',
-    fontWeight: 600,
-    letterSpacing: '-0.022em',
-    color: theme.text,
-    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-  }}>
-    IntervStack
-  </span>
-</div>
+            <span style={{
+              fontSize: '17px',
+              fontWeight: 600,
+              letterSpacing: '-0.022em',
+              color: theme.text,
+              fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
+            }}>
+              IntervStack
+            </span>
+          </motion.div>
 
-          
           <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <a href="#features" style={{ 
-              fontSize: '14px', 
-              fontWeight: 500, 
-              color: theme.textSecondary,
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-              cursor: 'pointer',
-              fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>Features</a>
-            <a href="#how" style={{ 
-              fontSize: '14px', 
-              fontWeight: 500, 
-              color: theme.textSecondary,
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-              cursor: 'pointer',
-              fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>How it works</a>
-             <a onClick={() => navigate('/pricing')} style={{ 
-  fontSize: '14px', 
-  fontWeight: 500, 
-  color: theme.textSecondary,
-  textDecoration: 'none',
-  transition: 'color 0.2s',
-  cursor: 'pointer',
-  fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-}}>Pricing</a>
+            {['Features', 'How it works', 'Pricing'].map((label, i) => (
+              <motion.a
+                key={label}
+                href={label === 'Pricing' ? undefined : `#${label.toLowerCase().replace(' ', '')}`}
+                onClick={label === 'Pricing' ? () => navigate('/pricing') : undefined}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + i * 0.05, duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+                whileHover={{ y: -1 }}
+                style={{ 
+                  fontSize: '14px', 
+                  fontWeight: 500, 
+                  color: theme.textSecondary,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                  cursor: 'pointer',
+                  fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+                }}
+              >
+                {label}
+              </motion.a>
+            ))}
             
-            <button
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.55, duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
               onClick={() => setIsDark(!isDark)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               style={{
                 width: '36px',
                 height: '36px',
@@ -173,66 +201,66 @@ const HomePage = () => {
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = theme.surfaceHover;
-                e.currentTarget.style.transform = 'scale(1.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = theme.surface;
-                e.currentTarget.style.transform = 'scale(1)';
+                overflow: 'hidden',
+                boxShadow: isDark 
+                  ? '0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.1)'
+                  : '0 1px 3px rgba(0, 0, 0, 0.1), inset 0 0.5px 0 rgba(255, 255, 255, 0.5)'
               }}
             >
-              {isDark ? (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ position: 'relative', zIndex: 1 }}>
-                  <circle cx="8" cy="8" r="4" fill={theme.text} />
-                  <g stroke={theme.text} strokeWidth="1.5" strokeLinecap="round">
-                    <line x1="8" y1="1" x2="8" y2="2.5" />
-                    <line x1="8" y1="13.5" x2="8" y2="15" />
-                    <line x1="1" y1="8" x2="2.5" y2="8" />
-                    <line x1="13.5" y1="8" x2="15" y2="8" />
-                    <line x1="2.9" y1="2.9" x2="3.9" y2="3.9" />
-                    <line x1="12.1" y1="12.1" x2="13.1" y2="13.1" />
-                    <line x1="2.9" y1="13.1" x2="3.9" y2="12.1" />
-                    <line x1="12.1" y1="3.9" x2="13.1" y2="2.9" />
-                  </g>
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ position: 'relative', zIndex: 1 }}>
-                  <path d="M13.5 8.5C13.5 11.2614 11.2614 13.5 8.5 13.5C5.73858 13.5 3.5 11.2614 3.5 8.5C3.5 5.73858 5.73858 3.5 8.5 3.5C8.58485 3.5 8.66913 3.5033 8.75275 3.50982C7.97212 4.21942 7.5 5.22784 7.5 6.34C7.5 8.54914 9.25086 10.3 11.46 10.3C12.3282 10.3 13.1226 10.0042 13.7598 9.51275C13.8467 9.82725 13.8933 10.1585 13.8933 10.5C13.8933 10.5848 13.8903 10.6691 13.8843 10.7527C13.6693 10.8297 13.4407 10.87 13.2033 10.87C11.8226 10.87 10.7033 9.75071 10.7033 8.37C10.7033 7.40212 11.2226 6.55962 11.9893 6.10275C11.9048 6.01913 11.8118 5.94275 11.7118 5.875C11.1614 5.51242 10.4621 5.2 9.5 5.2C6.73858 5.2 4.5 7.43858 4.5 10.2C4.5 12.2426 5.88507 13.9573 7.77893 14.4893C7.46913 14.7818 7.06913 15 6.5 15C4.84315 15 3.5 13.6569 3.5 12C3.5 11.4621 3.65982 10.9621 3.93934 10.5466C2.76242 9.53858 2 8.02132 2 6.5C2 3.73858 4.23858 1.5 7 1.5C9.54765 1.5 11.6547 3.42793 11.9643 5.92893C12.9121 6.5121 13.5 7.58507 13.5 8.5Z" fill={theme.text} />
-                </svg>
-              )}
-            </button>
+              <motion.div
+                initial={{ rotate: 0, scale: 1 }}
+                animate={{ rotate: isDark ? 0 : 180, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {isDark ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ position: 'relative', zIndex: 1 }}>
+                    <circle cx="8" cy="8" r="4" fill={theme.text} />
+                    <g stroke={theme.text} strokeWidth="1.5" strokeLinecap="round">
+                      <line x1="8" y1="1" x2="8" y2="2.5" />
+                      <line x1="8" y1="13.5" x2="8" y2="15" />
+                      <line x1="1" y1="8" x2="2.5" y2="8" />
+                      <line x1="13.5" y1="8" x2="15" y2="8" />
+                      <line x1="2.9" y1="2.9" x2="3.9" y2="3.9" />
+                      <line x1="12.1" y1="12.1" x2="13.1" y2="13.1" />
+                      <line x1="2.9" y1="13.1" x2="3.9" y2="12.1" />
+                      <line x1="12.1" y1="3.9" x2="13.1" y2="2.9" />
+                    </g>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ position: 'relative', zIndex: 1 }}>
+                    <path d="M13.5 8.5C13.5 11.2614 11.2614 13.5 8.5 13.5C5.73858 13.5 3.5 11.2614 3.5 8.5C3.5 5.73858 5.73858 3.5 8.5 3.5C8.58485 3.5 8.66913 3.5033 8.75275 3.50982C7.97212 4.21942 7.5 5.22784 7.5 6.34C7.5 8.54914 9.25086 10.3 11.46 10.3C12.3282 10.3 13.1226 10.0042 13.7598 9.51275C13.8467 9.82725 13.8933 10.1585 13.8933 10.5C13.8933 10.5848 13.8903 10.6691 13.8843 10.7527C13.6693 10.8297 13.4407 10.87 13.2033 10.87C11.8226 10.87 10.7033 9.75071 10.7033 8.37C10.7033 7.40212 11.2226 6.55962 11.9893 6.10275C11.9048 6.01913 11.8118 5.94275 11.7118 5.875C11.1614 5.51242 10.4621 5.2 9.5 5.2C6.73858 5.2 4.5 7.43858 4.5 10.2C4.5 12.2426 5.88507 13.9573 7.77893 14.4893C7.46913 14.7818 7.06913 15 6.5 15C4.84315 15 3.5 13.6569 3.5 12C3.5 11.4621 3.65982 10.9621 3.93934 10.5466C2.76242 9.53858 2 8.02132 2 6.5C2 3.73858 4.23858 1.5 7 1.5C9.54765 1.5 11.6547 3.42793 11.9643 5.92893C12.9121 6.5121 13.5 7.58507 13.5 8.5Z" fill={theme.text} />
+                  </svg>
+                )}
+              </motion.div>
+            </motion.button>
             
-            <button style={{
-              backgroundColor: theme.accent,
-              color: '#fff',
-              padding: '8px 18px',
-              borderRadius: '980px',
-              fontSize: '14px',
-              fontWeight: 500,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              letterSpacing: '-0.01em',
-              fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-              
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme.accentHover;
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme.accent;
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onClick={() => navigate('/start-practicing')}>
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
+              whileHover={{ scale: 1.02, boxShadow: isDark ? '0 4px 24px rgba(0, 113, 227, 0.35)' : '0 4px 24px rgba(0, 113, 227, 0.25)' }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                backgroundColor: theme.accent,
+                color: '#fff',
+                padding: '8px 18px',
+                borderRadius: '980px',
+                fontSize: '14px',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                letterSpacing: '-0.01em',
+                fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif',
+                boxShadow: isDark ? '0 2px 12px rgba(0, 113, 227, 0.25)' : '0 2px 12px rgba(0, 113, 227, 0.15)'
+              }}
+              onClick={() => navigate('/start-practicing')}
+            >
               Get started
-            </button>
+            </motion.button>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       <motion.section 
         ref={heroRef}
@@ -252,18 +280,32 @@ const HomePage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
           >
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 16px',
-              borderRadius: '100px',
-              backgroundColor: theme.surface,
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
-              border: `1px solid ${theme.border}`,
-              marginBottom: '28px'
-            }}>
-              <Sparkles size={14} color={theme.accent} strokeWidth={2.5} />
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
+              whileHover={{ scale: 1.02 }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 16px',
+                borderRadius: '100px',
+                backgroundColor: theme.surface,
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                border: `1px solid ${theme.border}`,
+                marginBottom: '28px',
+                boxShadow: isDark 
+                  ? '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0.5px 0 rgba(255, 255, 255, 0.1)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.5)'
+              }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles size={14} color={theme.accent} strokeWidth={2.5} />
+              </motion.div>
               <span style={{
                 fontSize: '13px',
                 fontWeight: 500,
@@ -271,66 +313,85 @@ const HomePage = () => {
                 letterSpacing: '0.01em',
                 fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
               }}>Powered by advanced AI</span>
-            </div>
+            </motion.div>
             
-            <h1 style={{
-              fontSize: 'clamp(52px, 7vw, 96px)',
-              fontWeight: 700,
-              letterSpacing: '-0.035em',
-              lineHeight: '1.05',
-              marginBottom: '24px',
-              color: theme.text,
-              transition: 'color 0.3s ease',
-              fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+              style={{
+                fontSize: 'clamp(52px, 7vw, 96px)',
+                fontWeight: 700,
+                letterSpacing: '-0.035em',
+                lineHeight: '1.05',
+                marginBottom: '24px',
+                color: theme.text,
+                transition: 'color 0.3s ease',
+                fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
+              }}
+            >
               Master your<br />next interview
-            </h1>
+            </motion.h1>
             
-            <p style={{
-              fontSize: '21px',
-              lineHeight: '1.47',
-              color: theme.textSecondary,
-              marginBottom: '40px',
-              maxWidth: '680px',
-              margin: '0 auto 40px',
-              letterSpacing: '-0.015em',
-              fontWeight: 400,
-              fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+              style={{
+                fontSize: '21px',
+                lineHeight: '1.47',
+                color: theme.textSecondary,
+                marginBottom: '40px',
+                maxWidth: '680px',
+                margin: '0 auto 40px',
+                letterSpacing: '-0.015em',
+                fontWeight: 400,
+                fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+              }}
+            >
               AI-powered interview preparation with personalized questions,
               real-time feedback, and comprehensive performance analytics.
-            </p>
+            </motion.p>
             
             <motion.button
-  style={{
-    backgroundColor: theme.accent,
-    color: '#fff',
-    padding: '14px 32px',
-    borderRadius: '980px',
-    fontSize: '17px',
-    fontWeight: 500,
-    border: 'none',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    letterSpacing: '-0.015em',
-    boxShadow: isDark
-      ? '0 4px 24px rgba(0, 113, 227, 0.25)'
-      : '0 4px 24px rgba(0, 113, 227, 0.15)',
-    fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-  }}
-  whileHover={{ scale: 1.02 }}
-  whileTap={{ scale: 0.98 }}
-  transition={{ duration: 0.15 }}
-  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHover}
-  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accent}
-  onClick={() => navigate('/start-practicing')}   // ✅ THIS WAS MISSING
->
-  Start practicing
-  <ArrowRight size={18} strokeWidth={2.5} />
-</motion.button>
-
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: isDark
+                  ? '0 8px 32px rgba(0, 113, 227, 0.35)'
+                  : '0 8px 32px rgba(0, 113, 227, 0.25)'
+              }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                backgroundColor: theme.accent,
+                color: '#fff',
+                padding: '14px 32px',
+                borderRadius: '980px',
+                fontSize: '17px',
+                fontWeight: 500,
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                letterSpacing: '-0.015em',
+                boxShadow: isDark
+                  ? '0 4px 24px rgba(0, 113, 227, 0.25)'
+                  : '0 4px 24px rgba(0, 113, 227, 0.15)',
+                fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+              }}
+              onClick={() => navigate('/start-practicing')}
+            >
+              Start practicing
+              <motion.div
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ArrowRight size={18} strokeWidth={2.5} />
+              </motion.div>
+            </motion.button>
           </motion.div>
         </div>
       </motion.section>
@@ -431,8 +492,9 @@ const HomePage = () => {
                           cursor: 'pointer',
                           boxShadow: `0 2px 6px ${color}80, inset 0 -1px 2px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.3)`
                         }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       />
                     ))}
                   </div>
@@ -472,27 +534,38 @@ const HomePage = () => {
                       position: 'relative',
                       overflow: 'hidden'
                     }}>
-                      <div style={{
-                        position: 'absolute',
-                        top: '24px',
-                        right: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 16px',
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
-                        borderRadius: '100px',
-                        border: '1px solid rgba(239, 68, 68, 0.25)',
-                        boxShadow: '0 4px 16px rgba(239, 68, 68, 0.15)'
-                      }}>
-                        <div style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: '#ef4444',
-                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.7)',
-                          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                        }} />
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5, duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+                        style={{
+                          position: 'absolute',
+                          top: '24px',
+                          right: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 16px',
+                          background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                          borderRadius: '100px',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.15)'
+                        }}
+                      >
+                        <motion.div 
+                          animate={{ 
+                            scale: [1, 1.2, 1],
+                            opacity: [1, 0.7, 1]
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ef4444',
+                            boxShadow: '0 0 10px rgba(239, 68, 68, 0.7)'
+                          }} 
+                        />
                         <span style={{
                           fontSize: '13px',
                           fontWeight: 700,
@@ -500,35 +573,44 @@ const HomePage = () => {
                           letterSpacing: '0.04em',
                           fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
                         }}>RECORDING</span>
-                      </div>
+                      </motion.div>
 
-                      <div style={{
-                        background: isDark 
-                          ? 'rgba(255, 255, 255, 0.04)'
-                          : 'rgba(255, 255, 255, 0.85)',
-                        backdropFilter: 'blur(24px)',
-                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'}`,
-                        borderRadius: '18px',
-                        padding: '36px',
-                        boxShadow: isDark 
-                          ? '0 12px 48px rgba(0, 0, 0, 0.5)'
-                          : '0 12px 48px rgba(0, 0, 0, 0.1)'
-                      }}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+                        style={{
+                          background: isDark 
+                            ? 'rgba(255, 255, 255, 0.04)'
+                            : 'rgba(255, 255, 255, 0.85)',
+                          backdropFilter: 'blur(24px)',
+                          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'}`,
+                          borderRadius: '18px',
+                          padding: '36px',
+                          boxShadow: isDark 
+                            ? '0 12px 48px rgba(0, 0, 0, 0.5), inset 0 0.5px 0 rgba(255, 255, 255, 0.1)'
+                            : '0 12px 48px rgba(0, 0, 0, 0.1), inset 0 0.5px 0 rgba(255, 255, 255, 0.5)'
+                        }}
+                      >
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                          <div style={{
-                            width: '52px',
-                            height: '52px',
-                            background: 'linear-gradient(135deg, rgba(0, 113, 227, 0.18) 0%, rgba(0, 113, 227, 0.08) 100%)',
-                            borderRadius: '14px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid rgba(0, 113, 227, 0.25)',
-                            flexShrink: 0,
-                            boxShadow: '0 4px 12px rgba(0, 113, 227, 0.15)'
-                          }}>
+                          <motion.div 
+                            whileHover={{ rotate: [0, -5, 5, 0] }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              background: 'linear-gradient(135deg, rgba(0, 113, 227, 0.18) 0%, rgba(0, 113, 227, 0.08) 100%)',
+                              borderRadius: '14px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid rgba(0, 113, 227, 0.25)',
+                              flexShrink: 0,
+                              boxShadow: '0 4px 12px rgba(0, 113, 227, 0.15)'
+                            }}
+                          >
                             <Brain size={26} color={theme.accent} strokeWidth={2} />
-                          </div>
+                          </motion.div>
                           <div style={{ flex: 1 }}>
                             <div style={{
                               fontSize: '11px',
@@ -552,18 +634,22 @@ const HomePage = () => {
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr',
-                        gap: '18px',
-                        marginTop: 'auto'
-                      }}>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 1fr',
+                          gap: '18px',
+                          marginTop: 'auto'
+                        }}
+                      >
                         
                         <div style={{
                           aspectRatio: '16/9',
-                          
                           background: isDark
                             ? 'linear-gradient(135deg, #1a1a1c 0%, #0f0f10 100%)'
                             : 'linear-gradient(135deg, #d1d1d6 0%, #b4b4b9 100%)',
@@ -572,25 +658,24 @@ const HomePage = () => {
                           overflow: 'hidden',
                           border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)'}`,
                           boxShadow: isDark 
-                            ? 'inset 0 2px 8px rgba(0, 0, 0, 0.4)'
-                            : 'inset 0 2px 8px rgba(0, 0, 0, 0.1)'
+                            ? 'inset 0 2px 8px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3)'
+                            : 'inset 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1)'
                         }}>
-<img
-  src="/mock-video.png"
-  alt="preview"
-  style={{
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  }}
-/>
+                          <img
+                            src="/mock-video.png"
+                            alt="preview"
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
                           <div style={{
                             position: 'absolute',
                             inset: 0,
                             background: isDark 
-                            
                               ? 'radial-gradient(circle at 30% 40%, rgba(0, 113, 227, 0.08) 0%, transparent 60%)'
                               : 'radial-gradient(circle at 30% 40%, rgba(0, 113, 227, 0.04) 0%, transparent 60%)'
                           }} />
@@ -602,31 +687,37 @@ const HomePage = () => {
                             display: 'flex',
                             gap: '10px'
                           }}>
-                            
-                            <div style={{
-                              padding: '7px 12px',
-                              background: 'rgba(0, 0, 0, 0.6)',
-                              backdropFilter: 'blur(12px)',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '7px',
-                              border: '1px solid rgba(255, 255, 255, 0.15)'
-                            }}>
-                              
+                            <motion.div 
+                              whileHover={{ scale: 1.05 }}
+                              style={{
+                                padding: '7px 12px',
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                backdropFilter: 'blur(12px)',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '7px',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                              }}
+                            >
                               <Video size={13} color="#fff" strokeWidth={2.5} />
                               <span style={{ fontSize: '12px', color: '#fff', fontWeight: 700, fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif' }}>HD</span>
-                            </div>
-                            <div style={{
-                              padding: '7px 12px',
-                              background: 'rgba(0, 0, 0, 0.6)',
-                              backdropFilter: 'blur(12px)',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '7px',
-                              border: '1px solid rgba(255, 255, 255, 0.15)'
-                            }}>
+                            </motion.div>
+                            <motion.div 
+                              whileHover={{ scale: 1.05 }}
+                              style={{
+                                padding: '7px 12px',
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                backdropFilter: 'blur(12px)',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '7px',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                              }}
+                            >
                               <Mic size={13} color="#fff" strokeWidth={2.5} />
                               <div style={{
                                 width: '36px',
@@ -636,17 +727,20 @@ const HomePage = () => {
                                 overflow: 'hidden',
                                 position: 'relative'
                               }}>
-                                <div style={{
-                                  position: 'absolute',
-                                  left: 0,
-                                  top: 0,
-                                  height: '100%',
-                                  width: '70%',
-                                  background: '#10b981',
-                                  borderRadius: '2px'
-                                }} />
+                                <motion.div 
+                                  animate={{ width: ['60%', '75%', '65%', '70%'] }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                  style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: 0,
+                                    height: '100%',
+                                    background: '#10b981',
+                                    borderRadius: '2px'
+                                  }} 
+                                />
                               </div>
-                            </div>
+                            </motion.div>
                           </div>
                         </div>
 
@@ -664,19 +758,26 @@ const HomePage = () => {
                               borderRadius: '12px',
                               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'}`,
                               position: 'relative',
-                              overflow: 'hidden'
+                              overflow: 'hidden',
+                              boxShadow: isDark 
+                                ? 'inset 0 1px 2px rgba(0, 0, 0, 0.3)'
+                                : 'inset 0 1px 2px rgba(0, 0, 0, 0.08)'
                             }}>
-                              <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                background: isDark
-                                  ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%)'
-                                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%)'
-                              }} />
+                              <img
+                                src={i === 1 ? "/abc.png" : "/arey.jpg"}
+                                alt="side preview"
+                                style={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   </motion.div>
 
@@ -689,40 +790,38 @@ const HomePage = () => {
                 </div>
               </div>
 
-             <div style={{
-  height: '16px',
-  background: `linear-gradient(180deg, ${theme.macBodyBottom} 0%, ${isDark ? '#0a0a0b' : '#b4b4b9'} 100%)`,
-  borderRadius: '0 0 16px 16px',
-  position: 'relative',
-  boxShadow: isDark
-    ? '0 12px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04)'
-    : '0 12px 48px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.08)',
-  borderTop: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.3s ease'
-}}>
-  
-  <svg 
-    width="26" 
-    height="30" 
-    viewBox="0 0 24 28" 
-    fill="none"
-    style={{ 
-      opacity: isDark ? 0.5 : 0.4,
-      marginTop: '-1px'
-    }}
-  >
-    <path 
-      d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" 
-      fill={isDark ? '#ffffff' : '#000000'}
-    />
-  </svg>
-</div>
+              <div style={{
+                height: '16px',
+                background: `linear-gradient(180deg, ${theme.macBodyBottom} 0%, ${isDark ? '#0a0a0b' : '#b4b4b9'} 100%)`,
+                borderRadius: '0 0 16px 16px',
+                position: 'relative',
+                boxShadow: isDark
+                  ? '0 12px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04)'
+                  : '0 12px 48px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.08)',
+                borderTop: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease'
+              }}>
+                <svg 
+                  width="26" 
+                  height="30" 
+                  viewBox="0 0 24 28" 
+                  fill="none"
+                  style={{ 
+                    opacity: isDark ? 0.5 : 0.4,
+                    marginTop: '-1px'
+                  }}
+                >
+                  <path 
+                    d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" 
+                    fill={isDark ? '#ffffff' : '#000000'}
+                  />
+                </svg>
+              </div>
 
-              {/* Base without keyboard */}
               <div style={{
                 marginTop: '4px',
                 height: '24px',
@@ -760,7 +859,13 @@ const HomePage = () => {
         zIndex: 1
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '100px' }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+            style={{ textAlign: 'center', marginBottom: '100px' }}
+          >
             <h2 style={{
               fontSize: 'clamp(40px, 5vw, 64px)',
               fontWeight: 700,
@@ -777,7 +882,7 @@ const HomePage = () => {
               letterSpacing: '-0.015em',
               fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
             }}>Everything you need to prepare, practice, and perform</p>
-          </div>
+          </motion.div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '32px' }}>
             {[
@@ -827,7 +932,10 @@ const HomePage = () => {
                   padding: '40px',
                   border: `1px solid ${theme.border}`,
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: 'default'
+                  cursor: 'default',
+                  boxShadow: isDark
+                    ? '0 4px 24px rgba(0, 0, 0, 0.2), inset 0 0.5px 0 rgba(255, 255, 255, 0.08)'
+                    : '0 4px 24px rgba(0, 0, 0, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.5)'
                 }}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -835,24 +943,31 @@ const HomePage = () => {
                 transition={{ delay: idx * 0.08, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
                 whileHover={{
                   borderColor: theme.borderHover,
-                  y: -4,
-                  transition: { duration: 0.2 }
+                  y: -6,
+                  boxShadow: isDark
+                    ? '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.12)'
+                    : '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0.5px 0 rgba(255, 255, 255, 0.7)',
+                  transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
                 }}
               >
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  background: `${feature.color}15`,
-                  borderRadius: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '24px',
-                  border: `1px solid ${feature.color}30`
-                }}>
-                  
+                <motion.div 
+                  whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+                  transition={{ duration: 0.5 }}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    background: `${feature.color}15`,
+                    borderRadius: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '24px',
+                    border: `1px solid ${feature.color}30`,
+                    boxShadow: `0 4px 16px ${feature.color}20`
+                  }}
+                >
                   <feature.icon size={28} color={feature.color} strokeWidth={2} />
-                </div>
+                </motion.div>
                 <h3 style={{
                   fontSize: '24px',
                   fontWeight: 600,
@@ -877,7 +992,13 @@ const HomePage = () => {
 
       <section id="how" style={{ padding: '160px 24px', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '980px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '100px' }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+            style={{ textAlign: 'center', marginBottom: '100px' }}
+          >
             <h2 style={{
               fontSize: 'clamp(40px, 5vw, 64px)',
               fontWeight: 700,
@@ -894,7 +1015,7 @@ const HomePage = () => {
               letterSpacing: '-0.015em',
               fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
             }}>Three steps to interview mastery</p>
-          </div>
+          </motion.div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
             {[
@@ -922,15 +1043,19 @@ const HomePage = () => {
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ delay: idx * 0.1, duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
               >
-                <div style={{
-                  fontSize: '80px',
-                  fontWeight: 700,
-                  color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-                  letterSpacing: '-0.03em',
-                  lineHeight: '1',
-                  userSelect: 'none',
-                  fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-                }}>{step.num}</div>
+                <motion.div 
+                  whileHover={{ scale: 1.1 }}
+                  style={{
+                    fontSize: '80px',
+                    fontWeight: 700,
+                    color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                    letterSpacing: '-0.03em',
+                    lineHeight: '1',
+                    userSelect: 'none',
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >{step.num}</motion.div>
                 <div style={{ flex: 1, paddingTop: '8px' }}>
                   <h3 style={{
                     fontSize: '32px',
@@ -999,6 +1124,14 @@ const HomePage = () => {
               Join professionals who are mastering their interview skills<br />with AI-powered preparation
             </p>
             <motion.button
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: isDark 
+                  ? '0 12px 40px rgba(0, 113, 227, 0.4)'
+                  : '0 12px 40px rgba(0, 113, 227, 0.3)'
+              }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
               style={{
                 backgroundColor: theme.accent,
                 color: '#fff',
@@ -1017,15 +1150,15 @@ const HomePage = () => {
                   : '0 8px 32px rgba(0, 113, 227, 0.2)',
                 fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
               }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accent}
               onClick={() => navigate('/start-practicing')}
             >
               Get started now
-              <ArrowRight size={19} strokeWidth={2.5} />
+              <motion.div
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ArrowRight size={19} strokeWidth={2.5} />
+              </motion.div>
             </motion.button>
           </motion.div>
         </div>
@@ -1040,23 +1173,29 @@ const HomePage = () => {
         zIndex: 1
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            marginBottom: '20px'
-          }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              marginBottom: '20px'
+            }}
+          >
             <img
-    src="/Logoo.png"
-    alt="IntervStack Logo"
-    style={{
-      width: '28px',
-      height: '28px',
-      borderRadius: '6px',
-      objectFit: 'contain'
-    }}
-  />
+              src="/Logoo.png"
+              alt="IntervStack Logo"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                objectFit: 'contain'
+              }}
+            />
             <span style={{
               fontSize: '19px',
               fontWeight: 600,
@@ -1064,15 +1203,21 @@ const HomePage = () => {
               color: theme.text,
               fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
             }}>IntervStack</span>
-          </div>
+          </motion.div>
           
-          <p style={{
-            fontSize: '14px',
-            color: theme.textSecondary,
-            margin: 0,
-            fontWeight: 400,
-            fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
-          }}>© 2026 IntervStack. All rights reserved.</p>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            style={{
+              fontSize: '14px',
+              color: theme.textSecondary,
+              margin: 0,
+              fontWeight: 400,
+              fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif'
+            }}
+          >© 2026 IntervStack. All rights reserved.</motion.p>
         </div>
       </footer>
 
@@ -1092,6 +1237,7 @@ const HomePage = () => {
           box-sizing: border-box;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
         }
         
         body {
@@ -1104,6 +1250,11 @@ const HomePage = () => {
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
           }
+        }
+
+        /* Smooth scroll */
+        html {
+          scroll-behavior: smooth;
         }
       `}</style>
     </div>

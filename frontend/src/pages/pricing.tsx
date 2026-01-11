@@ -29,11 +29,11 @@ const PricingPage = () => {
     {
       name: 'Starter',
       icon: Sparkles,
-      price: { monthly: 19, annual: 15 },
+      price: { monthly: 0, annual: 15 },
       color: '#0071e3',
       description: 'Perfect for getting started',
       features: [
-        '10 interview sessions per month',
+        '3 interview sessions per month',
         'Basic AI feedback',
         'Video recording & playback',
         'Question generation from resume',
@@ -46,7 +46,7 @@ const PricingPage = () => {
     {
       name: 'Professional',
       icon: Zap,
-      price: { monthly: 49, annual: 39 },
+      price: { monthly: 29, annual: 39 },
       color: '#bf5af2',
       description: 'For serious interview preparation',
       features: [
