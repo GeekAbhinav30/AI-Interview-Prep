@@ -6,31 +6,55 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# ------------------------------------------------------------------
+# Resolve paths
+# ------------------------------------------------------------------
+BACKEND_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_DIR.parent
 
 # ------------------------------------------------------------------
-# Base paths
+# Load .env safely from BOTH possible locations
+# Priority:
+#   1. backend/.env
+#   2. project_root/.env
 # ------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent
+backend_env = BACKEND_DIR / ".env"
+root_env = PROJECT_ROOT / ".env"
+
+if backend_env.exists():
+    load_dotenv(dotenv_path=backend_env)
+    ENV_PATH_USED = backend_env
+elif root_env.exists():
+    load_dotenv(dotenv_path=root_env)
+    ENV_PATH_USED = root_env
+else:
+    ENV_PATH_USED = None
 
 # ------------------------------------------------------------------
 # API Keys
 # ------------------------------------------------------------------
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# 🔍 DEBUG (REMOVE AFTER CONFIRMATION)
+print(
+    "CONFIG LOADED | GEMINI_API_KEY =",
+    "SET" if GEMINI_API_KEY else "NOT SET",
+    "| ENV PATH USED:",
+    ENV_PATH_USED,
+)
+
 # ------------------------------------------------------------------
 # Directories (ALL backend-controlled)
 # ------------------------------------------------------------------
-UPLOAD_FOLDER = BASE_DIR / "uploads"
-MODELS_DIR = BASE_DIR / "models"
+UPLOAD_FOLDER = BACKEND_DIR / "uploads"
+MODELS_DIR = BACKEND_DIR / "models"
 
 # YOLO model paths (LOCAL ONLY)
 YOLO_DIR = MODELS_DIR / "yolo"
 YOLO_MODEL_PATH = YOLO_DIR / "yolov5s.pt"
 
 # Logs
-LOG_FILENAME = BASE_DIR / "attention_log.csv"
+LOG_FILENAME = BACKEND_DIR / "attention_log.csv"
 
 # ------------------------------------------------------------------
 # Create directories if they don't exist

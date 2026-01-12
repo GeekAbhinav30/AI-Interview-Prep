@@ -23,6 +23,7 @@ from backend.services.resume_service import session_store
 
 # Routes
 from backend.routes import resume_routes, monitoring_routes
+from backend.routes import interview_routes   # ✅ NEW
 
 # Utils
 from backend.utils.logger import log_event
@@ -43,6 +44,7 @@ app.add_middleware(
 # Include routers
 app.include_router(resume_routes.router)
 app.include_router(monitoring_routes.router)
+app.include_router(interview_routes.router)  # ✅ NEW
 
 
 @app.get("/health")
@@ -102,18 +104,21 @@ async def startup_event():
     print("  POST   /upload_resume        - Upload resume for RAG")
     print("  GET    /resume_status/{id}   - Get resume processing status")
     print("  POST   /generate_questions   - Generate interview questions")
-    print("  POST   /start_monitoring     - Start attention monitoring")
-    print("  POST   /stop_monitoring      - Stop attention monitoring")
-    print("  POST   /process_frame        - Process video frame")
-    print("  POST   /room_scan            - Check for extra persons")
-    print("  POST   /complete_room_scan   - Mark room scan complete")
-    print("  GET    /get_alerts           - Get session alerts")
-    print("  GET    /session_summary      - Get session summary")
-    print("  GET    /download_log         - Download CSV log")
-    print("  GET    /health               - Health check")
-    print("  GET    /system_info          - System information")
-    print("  POST   /test_camera          - Test camera connection")
-    print("  POST   /clear_session        - Clear monitoring session")
+    print("  POST   /interview/aptitude  - Generate aptitude MCQs")     # ✅ NEW
+    print("  POST   /interview/technical - Generate technical MCQs")    # ✅ NEW
+    print("  POST   /interview/dsa       - Generate DSA question")      # ✅ NEW
+    print("  POST   /start_monitoring    - Start attention monitoring")
+    print("  POST   /stop_monitoring     - Stop attention monitoring")
+    print("  POST   /process_frame       - Process video frame")
+    print("  POST   /room_scan           - Check for extra persons")
+    print("  POST   /complete_room_scan  - Mark room scan complete")
+    print("  GET    /get_alerts          - Get session alerts")
+    print("  GET    /session_summary     - Get session summary")
+    print("  GET    /download_log        - Download CSV log")
+    print("  GET    /health              - Health check")
+    print("  GET    /system_info         - System information")
+    print("  POST   /test_camera         - Test camera connection")
+    print("  POST   /clear_session       - Clear monitoring session")
     print("=" * 80)
 
     log_event("SERVER_STARTED", "Modular backend server initialized")
