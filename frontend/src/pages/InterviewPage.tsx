@@ -1,8 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight, AlertTriangle, Code, Brain, FileText } from 'lucide-react';
 
 interface InterviewPageProps {
   onBack: () => void;
+}
+
+type InterviewMode = "aptitude" | "technical" | "dsa" | "resume";
+
+interface MCQQuestion {
+  question: string;
+  options: string[];
+  correct_index: number;
+}
+
+interface DSALogic {
+  title: string;
+  problem: string;
+  constraints: string;
+  example: string;
 }
 
 const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
@@ -20,11 +35,15 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [recordings, setRecordings] = useState<{ [key: number]: Blob }>({});
   const [cameraEnabled, setCameraEnabled] = useState<boolean>(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  
-  // Monitoring states
   const [monitoringActive, setMonitoringActive] = useState<boolean>(false);
   const [alerts, setAlerts] = useState<string[]>([]);
   const [monitoringStatus, setMonitoringStatus] = useState<string>("Not started");
+  
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>("aptitude");
+  const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
+  const [mcqAnswers, setMcqAnswers] = useState<{ [key: number]: number }>({});
+  const [dsaData, setDsaData] = useState<DSALogic | null>(null);
+  const [dsaCode, setDsaCode] = useState<string>("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -41,6 +60,42 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   };
   const t = theme[isDark ? 'dark' : 'light'];
 
+  useEffect(() => {
+    if (!showQuestions || !sessionId) return;
+    
+    const fetchData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        if (interviewMode === "aptitude" || interviewMode === "technical") {
+          const res = await fetch(`${API_BASE}/interview/${interviewMode}?session_id=${sessionId}&difficulty=medium`, { method: "POST" });
+          const data = await res.json();
+          if (data.questions) {
+            setMcqQuestions(data.questions);
+            setMcqAnswers({});
+          } else {
+            setError(`Failed to fetch ${interviewMode} questions.`);
+          }
+        } else if (interviewMode === "dsa") {
+          const res = await fetch(`${API_BASE}/interview/dsa?session_id=${sessionId}&difficulty=medium`, { method: "POST" });
+          const data = await res.json();
+          if (data.title) {
+            setDsaData(data);
+            setDsaCode("");
+          } else {
+            setError("Failed to fetch DSA problem.");
+          }
+        }
+      } catch (err) {
+        setError(`Error fetching ${interviewMode} data.`);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (interviewMode !== "resume") fetchData();
+  }, [interviewMode, showQuestions, sessionId]);
+
   const toggleCamera = async () => {
     try {
       if (!cameraEnabled) {
@@ -48,20 +103,12 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
         setMediaStream(stream);
         if (videoRef.current) videoRef.current.srcObject = stream;
         setCameraEnabled(true);
-        
-        
-        if (showQuestions && !monitoringActive) {
-          await startMonitoring();
-        }
+        if (showQuestions && !monitoringActive) await startMonitoring();
       } else {
         if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
         setMediaStream(null);
         setCameraEnabled(false);
-        
-        // Stop monitoring when camera is disabled
-        if (monitoringActive) {
-          await stopMonitoring();
-        }
+        if (monitoringActive) await stopMonitoring();
       }
     } catch (err) {
       setError("Camera access denied. Please enable camera permissions.");
@@ -75,15 +122,12 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId })
       });
-      
       if (res.ok) {
         setMonitoringActive(true);
         setMonitoringStatus("Active");
-        
-        // Start periodic frame capture and processing
         monitoringIntervalRef.current = window.setInterval(() => {
           captureAndProcessFrame();
-        }, 1000); // Process frame every second
+        }, 1000);
       }
     } catch (err) {
       console.error("Failed to start monitoring:", err);
@@ -96,13 +140,11 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
         clearInterval(monitoringIntervalRef.current);
         monitoringIntervalRef.current = null;
       }
-      
       await fetch(`${API_BASE}/stop_monitoring`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId })
       });
-      
       setMonitoringActive(false);
       setMonitoringStatus("Stopped");
     } catch (err) {
@@ -112,33 +154,20 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
 
   const captureAndProcessFrame = async () => {
     if (!videoRef.current || !canvasRef.current) return;
-    
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
     if (!ctx) return;
-    
-    // Set canvas size to match video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    // Draw current video frame to canvas
     ctx.drawImage(video, 0, 0);
-    
-    // Convert canvas to base64
     const frameData = canvas.toDataURL('image/jpeg', 0.8);
-    
     try {
       const res = await fetch(`${API_BASE}/process_frame`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          session_id: sessionId,
-          frame: frameData 
-        })
+        body: JSON.stringify({ session_id: sessionId, frame: frameData })
       });
-      
       if (res.ok) {
         const data = await res.json();
         setAlerts(data.alerts || []);
@@ -153,10 +182,8 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     setError("");
     const file = eOrFile instanceof File ? eOrFile : eOrFile.target.files?.[0];
     if (!file) return;
-    
     setPdfName(file.name);
     setLoading(true);
-    
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -175,7 +202,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     setError("");
     if (!sessionId) return setError("Please upload your resume first.");
     if (!jobDescription.trim()) return setError("Please enter a job description.");
-    
     setLoading(true);
     try {
       const formData = new FormData();
@@ -183,11 +209,11 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
       formData.append("job_description", jobDescription);
       const res = await fetch(`${API_BASE}/generate_questions`, { method: "POST", body: formData });
       const data = await res.json();
-      
       if (data.questions) {
         setQuestions(data.questions);
         setShowQuestions(true);
         setRecordings({});
+        setInterviewMode("aptitude");
       } else {
         setError(data.error || "Failed to generate questions.");
       }
@@ -199,50 +225,24 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   };
 
   const startRecording = async () => {
-  try {
-    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // ✅ FIX 2: Choose a browser-supported mime type
-    const mimeType =
-      MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-    // ✅ Create MediaRecorder WITH mimeType
-    const recorder = new MediaRecorder(audioStream, { mimeType });
-
-    const chunks: BlobPart[] = [];
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-
-    recorder.onstop = () => {
-      // ✅ FIX 1 already applied correctly here
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-       console.log("Recorded audio MIME type:", blob.type);
-
-      setRecordings(prev => ({
-        ...prev,
-        [currentQuestionIndex]: blob
-      }));
-
-      // Stop mic
-      audioStream.getTracks().forEach(track => track.stop());
-    };
-
-    recorder.start();
-    mediaRecorderRef.current = recorder;
-    setIsRecording(true);
-
-  } catch (err) {
-    console.error(err);
-    setError("Could not access microphone.");
-  }
-};
-
+    try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const recorder = new MediaRecorder(audioStream, { mimeType });
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: recorder.mimeType });
+        setRecordings(prev => ({ ...prev, [currentQuestionIndex]: blob }));
+        audioStream.getTracks().forEach(track => track.stop());
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (err) {
+      setError("Could not access microphone.");
+    }
+  };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
@@ -251,38 +251,21 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
- const playRecording = () => {
-  const recording = recordings[currentQuestionIndex];
-
-  if (!recording || !audioRef.current) {
-    console.warn("No recording or audio element");
-    return;
-  }
-
-  const audioEl = audioRef.current;
-  const url = URL.createObjectURL(recording);
-
-  audioEl.src = url;
-
-  // 🔊 IMPORTANT FIXES
-  audioEl.muted = false;
-  audioEl.volume = 1.0;
-  audioEl.currentTime = 0;
-
-  audioEl
-    .play()
-    .then(() => {
-      setIsPlaying(true);
-    })
-    .catch((err) => {
-      console.error("Audio playback failed:", err);
-    });
-
-  audioEl.onended = () => {
-    setIsPlaying(false);
-    URL.revokeObjectURL(url);
+  const playRecording = () => {
+    const recording = recordings[currentQuestionIndex];
+    if (!recording || !audioRef.current) return;
+    const audioEl = audioRef.current;
+    const url = URL.createObjectURL(recording);
+    audioEl.src = url;
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+    audioEl.currentTime = 0;
+    audioEl.play().then(() => setIsPlaying(true)).catch((err) => console.error("Audio playback failed:", err));
+    audioEl.onended = () => {
+      setIsPlaying(false);
+      URL.revokeObjectURL(url);
+    };
   };
-};
 
   const stopPlaying = () => {
     if (audioRef.current) {
@@ -301,14 +284,30 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   };
 
   const backToSetup = async () => {
-    if (monitoringActive) {
-      await stopMonitoring();
-    }
+    if (monitoringActive) await stopMonitoring();
     setShowQuestions(false);
     setCurrentQuestionIndex(0);
     setRecordings({});
     setAlerts([]);
+    setInterviewMode("aptitude");
+    setMcqQuestions([]);
+    setMcqAnswers({});
+    setDsaData(null);
+    setDsaCode("");
     stopPlaying();
+  };
+
+  const handleNextSection = () => {
+    if (interviewMode === "aptitude") {
+      console.log("Aptitude Answers:", mcqAnswers);
+      setInterviewMode("technical");
+    } else if (interviewMode === "technical") {
+      console.log("Technical Answers:", mcqAnswers);
+      setInterviewMode("dsa");
+    } else if (interviewMode === "dsa") {
+      console.log("DSA Code:", dsaCode);
+      setInterviewMode("resume");
+    }
   };
 
   useEffect(() => {
@@ -318,11 +317,9 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     };
   }, [mediaStream]);
 
-  if (showQuestions && questions.length > 0) {
+  if (showQuestions) {
     return (
-      <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex overflow-hidden`}
-           style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
-        
+      <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex overflow-hidden`} style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
         <canvas ref={canvasRef} className="hidden" />
         
         <div className="w-2/5 p-6 flex flex-col">
@@ -343,8 +340,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
                 <VideoOff className={`w-16 h-16 ${t.textSecondary}`} />
               </div>
             )}
-            
-            {/* Monitoring status overlay */}
             {monitoringActive && (
               <div className="absolute top-4 left-4 right-4">
                 <div className={`${isDark ? 'bg-slate-900/90' : 'bg-white/90'} backdrop-blur-sm rounded-lg p-3`}>
@@ -370,97 +365,167 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
             {cameraEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
             <span>{cameraEnabled ? 'Turn Off Camera' : 'Turn On Camera'}</span>
           </button>
-          
-          {cameraEnabled && (
-            <p className="text-xs text-center mt-3 text-yellow-500">
-              ⚠️ Your session is being proctored.
-            </p>
-          )}
+          {cameraEnabled && <p className="text-xs text-center mt-3 text-yellow-500">⚠️ Your session is being proctored.</p>}
         </div>
 
         <div className="w-3/5 p-6 flex flex-col h-full">
-          <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-8 h-full flex flex-col ${t.glowBlue} shadow-2xl`}>
+          <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-8 h-full flex flex-col ${t.glowBlue} shadow-2xl overflow-y-auto`}>
             
-            <div className="mb-8">
-              <div className={`flex justify-between ${t.textSecondary} mb-3`} style={{fontSize: '13px', fontWeight: '500'}}>
-                <span className="tracking-wide">Question {currentQuestionIndex + 1} of {questions.length}</span>
-                <span className="tracking-wide">{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}% Complete</span>
-              </div>
-              <div className={`w-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded-full h-1.5`}>
-                <div className={`bg-gradient-to-r ${t.buttonPrimary} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
-              </div>
+            <div className="flex justify-center space-x-2 mb-6">
+              {["aptitude", "technical", "dsa", "resume"].map((mode) => (
+                <div key={mode} className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide ${interviewMode === mode ? `bg-gradient-to-r ${t.buttonPrimary} text-white` : `${t.cardBg} ${t.textSecondary}`}`}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </div>
+              ))}
             </div>
 
-            <div className="flex-1 flex items-center justify-center mb-8 px-4">
-              <h2 className={`${t.text} text-center leading-relaxed tracking-tight font-medium`} style={{fontSize: '24px', fontWeight: '500', lineHeight: '1.4'}}>
-                {questions[currentQuestionIndex]}
-              </h2>
-            </div>
-
-            <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-6 ${t.border}`}>
-              <div className="flex justify-center space-x-4 mb-4">
-                {!isRecording ? (
-                  <button onClick={startRecording} disabled={isPlaying} className="flex items-center space-x-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:opacity-50 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
-                    <Mic className="w-4 h-4" />
-                    <span>Start Recording</span>
-                  </button>
+            {(interviewMode === "aptitude" || interviewMode === "technical") && (
+              <>
+                <div className="mb-6 text-center">
+                  <h2 className={`${t.text} font-bold tracking-tight mb-2`} style={{fontSize: '28px'}}>
+                    {interviewMode === "aptitude" ? "Aptitude Round" : "Technical Round"}
+                  </h2>
+                  <p className={`${t.textSecondary} text-sm`}>Answer all multiple-choice questions</p>
+                </div>
+                {loading ? (
+                  <div className="flex-1 flex items-center justify-center"><div className="text-center">Loading questions...</div></div>
                 ) : (
-                  <button onClick={stopRecording} className="flex items-center space-x-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide animate-pulse shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
-                    <Square className="w-4 h-4" />
-                    <span>Stop Recording</span>
-                  </button>
+                  <div className="flex-1 overflow-y-auto space-y-6">
+                    {mcqQuestions.map((q, idx) => (
+                      <div key={idx} className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 ${t.border}`}>
+                        <h3 className={`${t.text} font-semibold mb-4`} style={{fontSize: '16px'}}>Q{idx + 1}. {q.question}</h3>
+                        <div className="space-y-3">
+                          {q.options.map((opt, optIdx) => (
+                            <label key={optIdx} className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all ${mcqAnswers[idx] === optIdx ? `bg-gradient-to-r ${t.buttonPrimary} text-white` : `${isDark ? 'bg-slate-700/50' : 'bg-white/80'} hover:bg-slate-600/50`}`}>
+                              <input type="radio" name={`q-${idx}`} checked={mcqAnswers[idx] === optIdx} onChange={() => setMcqAnswers(prev => ({ ...prev, [idx]: optIdx }))} className="hidden" />
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${mcqAnswers[idx] === optIdx ? 'border-white' : 'border-slate-400'}`}>
+                                {mcqAnswers[idx] === optIdx && <div className="w-3 h-3 rounded-full bg-white" />}
+                              </div>
+                              <span className="text-sm">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-
-                {recordings[currentQuestionIndex] && !isRecording && (
-                  <button onClick={isPlaying ? stopPlaying : playRecording} className={`flex items-center space-x-3 px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg text-white ${isPlaying ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800' : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'}`} style={{fontSize: '14px', fontWeight: '600'}}>
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    <span>{isPlaying ? 'Stop Playing' : 'Play Answer'}</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="text-center">
-                {recordings[currentQuestionIndex] && <div className="text-green-400 font-medium tracking-wide" style={{fontSize: '13px'}}>✓ Answer Recorded Successfully</div>}
-                {isRecording && <div className="text-red-400 animate-pulse font-medium tracking-wide" style={{fontSize: '13px'}}>🔴 Recording in Progress...</div>}
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <button onClick={() => goToQuestion('prev')} disabled={currentQuestionIndex === 0} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
-                <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
-              </button>
-
-              <div className={`text-center ${t.textSecondary}`}>
-                <div className="font-medium tracking-wide" style={{fontSize: '13px'}}>{Object.keys(recordings).length} of {questions.length} Completed</div>
-              </div>
-
-              <button onClick={() => goToQuestion('next')} disabled={currentQuestionIndex === questions.length - 1} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
-                <span>Next</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {currentQuestionIndex === questions.length - 1 && Object.keys(recordings).length === questions.length && (
-              <div className="mt-6 text-center">
-                <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all transform hover:scale-105 shadow-2xl tracking-wide" style={{fontSize: '16px', fontWeight: '600'}}>
-                  Complete Interview Session 🎉
+                <button onClick={handleNextSection} className={`w-full mt-6 py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:scale-105 transition-all tracking-wide`} style={{fontSize: '16px', fontWeight: '600'}}>
+                  Next Section
                 </button>
-              </div>
+              </>
+            )}
+
+            {interviewMode === "dsa" && (
+              <>
+                <div className="mb-6 text-center">
+                  <h2 className={`${t.text} font-bold tracking-tight mb-2`} style={{fontSize: '28px'}}>DSA Problem</h2>
+                  <p className={`${t.textSecondary} text-sm`}>Write your solution below</p>
+                </div>
+                {loading ? (
+                  <div className="flex-1 flex items-center justify-center"><div className="text-center">Loading problem...</div></div>
+                ) : dsaData ? (
+                  <>
+                    <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-4 ${t.border} overflow-y-auto`} style={{maxHeight: '40vh'}}>
+                      <h3 className={`${t.text} font-bold mb-3`} style={{fontSize: '18px'}}>{dsaData.title}</h3>
+                      <p className={`${t.text} mb-4 whitespace-pre-wrap`} style={{fontSize: '14px', lineHeight: '1.6'}}>{dsaData.problem}</p>
+                      <div className="mb-3">
+                        <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '15px'}}>Constraints:</h4>
+                        <p className={`${t.textSecondary} text-sm whitespace-pre-wrap`}>{dsaData.constraints}</p>
+                      </div>
+                      <div>
+                        <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '15px'}}>Example:</h4>
+                        <pre className={`${t.textSecondary} text-xs bg-slate-900/30 p-3 rounded-lg overflow-x-auto`}>
+                          {typeof dsaData.example === 'object' && dsaData.example !== null ? JSON.stringify(dsaData.example, null, 2) : String(dsaData.example || '')}
+                        </pre>
+                      </div>
+                    </div>
+                    <textarea value={dsaCode} onChange={(e) => setDsaCode(e.target.value)} placeholder="Write your code here..." className={`w-full h-48 p-4 ${t.border} rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} backdrop-blur-xl font-mono text-sm`} style={{fontFamily: 'monospace'}} />
+                    <button onClick={handleNextSection} className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:scale-105 transition-all tracking-wide`} style={{fontSize: '16px', fontWeight: '600'}}>
+                      Next Section
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-4 ${t.border} overflow-y-auto`} style={{maxHeight: '40vh'}}>
+                      <div className={`${t.textSecondary} text-center`}>Waiting for problem data...</div>
+                    </div>
+                    <textarea value={dsaCode} onChange={(e) => setDsaCode(e.target.value)} placeholder="Write your code here..." className={`w-full h-48 p-4 ${t.border} rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} backdrop-blur-xl font-mono text-sm`} style={{fontFamily: 'monospace'}} />
+                    <button onClick={handleNextSection} disabled className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:scale-105 transition-all tracking-wide opacity-50 cursor-not-allowed`} style={{fontSize: '16px', fontWeight: '600'}}>
+                      Next Section
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {interviewMode === "resume" && questions.length > 0 && (
+              <>
+                <div className="mb-8">
+                  <div className={`flex justify-between ${t.textSecondary} mb-3`} style={{fontSize: '13px', fontWeight: '500'}}>
+                    <span className="tracking-wide">Question {currentQuestionIndex + 1} of {questions.length}</span>
+                    <span className="tracking-wide">{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}% Complete</span>
+                  </div>
+                  <div className={`w-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded-full h-1.5`}>
+                    <div className={`bg-gradient-to-r ${t.buttonPrimary} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center mb-8 px-4">
+                  <h2 className={`${t.text} text-center leading-relaxed tracking-tight font-medium`} style={{fontSize: '24px', fontWeight: '500', lineHeight: '1.4'}}>{questions[currentQuestionIndex]}</h2>
+                </div>
+                <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-6 ${t.border}`}>
+                  <div className="flex justify-center space-x-4 mb-4">
+                    {!isRecording ? (
+                      <button onClick={startRecording} disabled={isPlaying} className="flex items-center space-x-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:opacity-50 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
+                        <Mic className="w-4 h-4" />
+                        <span>Start Recording</span>
+                      </button>
+                    ) : (
+                      <button onClick={stopRecording} className="flex items-center space-x-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide animate-pulse shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
+                        <Square className="w-4 h-4" />
+                        <span>Stop Recording</span>
+                      </button>
+                    )}
+                    {recordings[currentQuestionIndex] && !isRecording && (
+                      <button onClick={isPlaying ? stopPlaying : playRecording} className={`flex items-center space-x-3 px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg text-white ${isPlaying ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800' : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'}`} style={{fontSize: '14px', fontWeight: '600'}}>
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        <span>{isPlaying ? 'Stop Playing' : 'Play Answer'}</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    {recordings[currentQuestionIndex] && <div className="text-green-400 font-medium tracking-wide" style={{fontSize: '13px'}}>✓ Answer Recorded Successfully</div>}
+                    {isRecording && <div className="text-red-400 animate-pulse font-medium tracking-wide" style={{fontSize: '13px'}}>🔴 Recording in Progress...</div>}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <button onClick={() => goToQuestion('prev')} disabled={currentQuestionIndex === 0} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
+                  </button>
+                  <div className={`text-center ${t.textSecondary}`}>
+                    <div className="font-medium tracking-wide" style={{fontSize: '13px'}}>{Object.keys(recordings).length} of {questions.length} Completed</div>
+                  </div>
+                  <button onClick={() => goToQuestion('next')} disabled={currentQuestionIndex === questions.length - 1} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
+                    <span>Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                {currentQuestionIndex === questions.length - 1 && Object.keys(recordings).length === questions.length && (
+                  <div className="mt-6 text-center">
+                    <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all transform hover:scale-105 shadow-2xl tracking-wide" style={{fontSize: '16px', fontWeight: '600'}}>Complete Interview Session 🎉</button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
-
         <audio ref={audioRef} className="hidden" />
       </div>
     );
   }
 
   return (
-    <div
-  className={`min-h-[90vh] w-full transition-all duration-700 ${t.bg} ${t.text} flex justify-center overflow-hidden`}
->
-
+    <div className={`min-h-[90vh] w-full transition-all duration-700 ${t.bg} ${t.text} flex justify-center overflow-hidden`}>
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {isDark ? (
           <>
@@ -474,51 +539,36 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
           </>
         )}
       </div>
-
       <div className="relative z-10 w-full max-w-2xl mx-6">
-        
         <div className="flex items-center justify-between mb-12">
           <button onClick={onBack} className={`flex items-center ${t.textSecondary} hover:${t.text} transition-colors group`}>
             <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium tracking-wide" style={{fontSize: '14px'}}>Back to Home</span>
           </button>
-          
           <button onClick={() => setIsDark(!isDark)} className={`p-3 ${t.cardBg} backdrop-blur-2xl ${t.border} rounded-2xl hover:scale-105 transition-all duration-300 ${t.glowBlue} shadow-lg`}>
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
         </div>
-
         <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-10 ${t.glowBlue} shadow-2xl`}>
-          
           <div className="text-center mb-10">
             <div className={`w-16 h-16 bg-gradient-to-br ${t.buttonPrimary} rounded-2xl flex items-center justify-center mx-auto mb-6 ${t.glowBlue} shadow-lg`}>
               <MessageSquare className="w-8 h-8 text-white" />
             </div>
-            <h1 className={`font-bold mb-4 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`} style={{fontSize: '36px', fontWeight: '700'}}>
-              AI Interview Assistant
-            </h1>
-            <p className={`${t.textSecondary} font-normal tracking-wide`} style={{fontSize: '16px', lineHeight: '1.5'}}>
-              Upload your resume and job description to begin your personalized preparation
-            </p>
+            <h1 className={`font-bold mb-4 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`} style={{fontSize: '36px', fontWeight: '700'}}>AI Interview Assistant</h1>
+            <p className={`${t.textSecondary} font-normal tracking-wide`} style={{fontSize: '16px', lineHeight: '1.5'}}>Upload your resume and job description to begin your personalized preparation</p>
           </div>
-
           <div className={`w-full ${isDark ? 'bg-blue-900/20' : 'bg-blue-50/80'} rounded-2xl border-2 border-dashed ${isDark ? 'border-blue-400/50' : 'border-blue-300'} hover:border-blue-400 transition-all cursor-pointer flex flex-col items-center py-8 mb-6 group`} onClick={() => fileInputRef.current?.click()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file?.type === "application/pdf") handleFileChange(file); else setError("Please upload a PDF file."); }} onDragOver={(e) => e.preventDefault()}>
             <input type="file" accept="application/pdf" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
             <Upload className={`w-10 h-10 text-blue-500 mb-4 group-hover:scale-110 transition-transform`} />
             <span className={`${t.text} font-semibold tracking-wide`} style={{fontSize: '15px'}}>Drop your resume PDF here or click to select</span>
             {pdfName && <span className="text-blue-500 font-semibold mt-3 tracking-wide" style={{fontSize: '14px'}}>{pdfName}</span>}
           </div>
-
           <textarea className={`w-full h-32 p-4 ${t.border} rounded-2xl mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} ${t.textSecondary} backdrop-blur-xl transition-all duration-300 font-normal tracking-wide`} placeholder="Paste the complete job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} disabled={loading} style={{fontSize: '14px', lineHeight: '1.5'}} />
-
           <button className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed tracking-wide`} onClick={handleGenerate} disabled={loading} style={{fontSize: '16px', fontWeight: '600'}}>
             {loading ? "Generating Questions..." : "Generate Interview Questions"}
           </button>
-
           {error && (
-            <div className="w-full text-red-400 mt-6 text-center font-medium bg-red-900/20 border border-red-400/30 rounded-2xl py-4 px-6 tracking-wide" style={{fontSize: '14px'}}>
-              {error}
-            </div>
+            <div className={`w-full text-red-400 mt-6 text-center font-medium bg-red-900/20 border border-red-400/30 rounded-2xl py-4 px-6 tracking-wide`} style={{fontSize: '14px'}}>{error}</div>
           )}
         </div>
       </div>
