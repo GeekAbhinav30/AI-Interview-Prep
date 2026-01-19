@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/homepage";
 import InterviewPage from "./pages/InterviewPage";
+import Dashboard from "./pages/Dashboard";
 import PricingPage from './pages/pricing';
 
 const App: React.FC = () => {
@@ -10,6 +11,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/start-practicing" element={<InterviewPage onBack={() => window.history.back()} />} />
+        <Route path="/dashboard" element={<Dashboard onBack={() => window.history.back()} />} />
         <Route path="/pricing" element={<PricingPage />} />
       </Routes>
     </Router>

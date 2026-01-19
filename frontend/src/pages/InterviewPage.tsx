@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight, AlertTriangle, Code, Brain, FileText } from 'lucide-react';
 
 interface InterviewPageProps {
@@ -44,6 +45,14 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [mcqAnswers, setMcqAnswers] = useState<{ [key: number]: number }>({});
   const [dsaData, setDsaData] = useState<DSALogic | null>(null);
   const [dsaCode, setDsaCode] = useState<string>("");
+  
+  // Evaluation results state
+  const [aptitudeResults, setAptitudeResults] = useState<any>(null);
+  const [technicalResults, setTechnicalResults] = useState<any>(null);
+  const [dsaResults, setDsaResults] = useState<any>(null);
+  const [resumeResults, setResumeResults] = useState<any>(null);
+  
+  const navigate = useNavigate();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -297,16 +306,146 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     stopPlaying();
   };
 
-  const handleNextSection = () => {
+  const handleNextSection = async () => {
     if (interviewMode === "aptitude") {
       console.log("Aptitude Answers:", mcqAnswers);
+      
+      // Evaluate aptitude MCQs
+      try {
+        const response = await fetch(`${API_BASE}/evaluation/mcq`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            type: "aptitude",
+            questions: mcqQuestions,
+            user_answers: mcqAnswers
+          })
+        });
+        const result = await response.json();
+        setAptitudeResults(result);
+        console.log("Aptitude evaluation:", result);
+      } catch (err) {
+        console.error("Aptitude evaluation failed:", err);
+      }
+      
       setInterviewMode("technical");
     } else if (interviewMode === "technical") {
       console.log("Technical Answers:", mcqAnswers);
+      
+      // Evaluate technical MCQs
+      try {
+        const response = await fetch(`${API_BASE}/evaluation/mcq`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            type: "technical",
+            questions: mcqQuestions,
+            user_answers: mcqAnswers
+          })
+        });
+        const result = await response.json();
+        setTechnicalResults(result);
+        console.log("Technical evaluation:", result);
+      } catch (err) {
+        console.error("Technical evaluation failed:", err);
+      }
+      
       setInterviewMode("dsa");
     } else if (interviewMode === "dsa") {
       console.log("DSA Code:", dsaCode);
+      
+      // Evaluate DSA code
+      try {
+        const response = await fetch(`${API_BASE}/evaluation/dsa`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            problem: dsaData,
+            user_code: dsaCode
+          })
+        });
+        const result = await response.json();
+        setDsaResults(result);
+        console.log("DSA evaluation:", result);
+      } catch (err) {
+        console.error("DSA evaluation failed:", err);
+      }
+      
       setInterviewMode("resume");
+    }
+  };
+
+  const handleCompleteInterview = async () => {
+    // Evaluate resume audio responses
+    try {
+      // Convert recordings to base64
+      const audio_recordings: { [key: number]: string } = {};
+      for (const [key, blob] of Object.entries(recordings)) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          audio_recordings[parseInt(key)] = reader.result as string;
+        };
+        reader.readAsDataURL(blob as Blob);
+      }
+      
+      // Wait for all conversions to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const response = await fetch(`${API_BASE}/evaluation/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          questions: questions,
+          audio_recordings: audio_recordings
+        })
+      });
+      const result = await response.json();
+      setResumeResults(result);
+      console.log("Resume evaluation:", result);
+      
+      // Generate final report
+      await generateFinalReport();
+    } catch (err) {
+      console.error("Resume evaluation failed:", err);
+      // Still try to generate report with available data
+      await generateFinalReport();
+    }
+  };
+
+  const generateFinalReport = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/evaluation/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          mcq_results: aptitudeResults,
+          dsa_results: dsaResults,
+          resume_results: resumeResults
+        })
+      });
+      const finalReport = await response.json();
+      console.log("Final report:", finalReport);
+      
+      // Navigate to dashboard with report and results
+      navigate('/dashboard', { 
+        state: { 
+          report: finalReport,
+          results: {
+            mcq_results: aptitudeResults,
+            dsa_results: dsaResults,
+            resume_results: resumeResults
+          }
+        } 
+      });
+    } catch (err) {
+      console.error("Final report generation failed:", err);
+      // Still navigate to dashboard
+      navigate('/dashboard');
     }
   };
 
@@ -512,7 +651,13 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
                 </div>
                 {currentQuestionIndex === questions.length - 1 && Object.keys(recordings).length === questions.length && (
                   <div className="mt-6 text-center">
-                    <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all transform hover:scale-105 shadow-2xl tracking-wide" style={{fontSize: '16px', fontWeight: '600'}}>Complete Interview Session 🎉</button>
+                    <button 
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all transform hover:scale-105 shadow-2xl tracking-wide" 
+                      style={{fontSize: '16px', fontWeight: '600'}} 
+                      onClick={handleCompleteInterview}
+                    >
+                      Complete Interview Session 🎉
+                    </button>
                   </div>
                 )}
               </>

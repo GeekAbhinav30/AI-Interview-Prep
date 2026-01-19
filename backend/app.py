@@ -24,6 +24,7 @@ from backend.services.resume_service import session_store
 # Routes
 from backend.routes import resume_routes, monitoring_routes
 from backend.routes import interview_routes   # ✅ NEW
+from backend.routes import evaluation_routes  # ✅ NEW
 
 # Utils
 from backend.utils.logger import log_event
@@ -45,6 +46,7 @@ app.add_middleware(
 app.include_router(resume_routes.router)
 app.include_router(monitoring_routes.router)
 app.include_router(interview_routes.router)  # ✅ NEW
+app.include_router(evaluation_routes.router)  # ✅ NEW
 
 
 @app.get("/health")
@@ -107,6 +109,10 @@ async def startup_event():
     print("  POST   /interview/aptitude  - Generate aptitude MCQs")     # ✅ NEW
     print("  POST   /interview/technical - Generate technical MCQs")    # ✅ NEW
     print("  POST   /interview/dsa       - Generate DSA question")      # ✅ NEW
+    print("  POST   /evaluation/mcq      - Evaluate MCQ answers")        # ✅ NEW
+    print("  POST   /evaluation/dsa      - Evaluate DSA code")           # ✅ NEW
+    print("  POST   /evaluation/resume   - Evaluate resume audio")       # ✅ NEW
+    print("  POST   /evaluation/report   - Generate final report")        # ✅ NEW
     print("  POST   /start_monitoring    - Start attention monitoring")
     print("  POST   /stop_monitoring     - Stop attention monitoring")
     print("  POST   /process_frame       - Process video frame")
