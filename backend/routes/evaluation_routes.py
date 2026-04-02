@@ -10,6 +10,7 @@ from backend.services.evaluation_service.mcq_evaluator import evaluate_mcq_answe
 from backend.services.evaluation_service.dsa_evaluator import evaluate_dsa_solution
 from backend.services.evaluation_service.resume_evaluator import evaluate_resume_answers
 from backend.services.evaluation_service.report_generator import generate_final_report
+from backend.services.monitoring_service import monitoring_sessions
 
 router = APIRouter(prefix="/evaluation", tags=["evaluation"])
 
@@ -40,8 +41,26 @@ def resume_evaluation(payload: ResumeAudioRequest):
 
 @router.post("/report")
 def final_report(payload: FinalReportRequest):
+    # DIAGNOSTIC: Log incoming payload
+    print(f"🚨 DEBUG: Incoming Report Payload: {payload.dict()}")
+    
+    # Extract session_id for proctoring integration
+    session_id = payload.session_id
+    
+    print(f"📊 Generating final report for session: {session_id}")
+    
+    # Bridge proctoring data from monitoring service
+    if session_id and session_id in monitoring_sessions:
+        alert_count = len(monitoring_sessions[session_id].alerts)
+        print(f"🔍 Found {alert_count} proctoring alerts for session {session_id}")
+    
+    # DIAGNOSTIC: Check resume data
+    if not payload.resume_results.get("responses"):
+        print(f"⚠️ Resume results empty, attempting cache recovery for session: {session_id}")
+    
     return generate_final_report(
         payload.mcq_results,
         payload.dsa_results,
-        payload.resume_results
+        payload.resume_results,
+        session_id
     )

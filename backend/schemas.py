@@ -103,15 +103,17 @@ class ResumeEvaluationResponse(BaseModel):
 # =========================
 
 class FinalReportRequest(BaseModel):
-    session_id: str
-    mcq_results: Optional[MCQEvaluationResponse] = None
-    dsa_results: Optional[DSAEvaluationResponse] = None
-    resume_results: Optional[ResumeEvaluationResponse] = None
+    session_id: Optional[str] = None
+    mcq_results: Any = {}
+    dsa_results: Any = {}
+    resume_results: Any = {}
 
 
 class FinalReportResponse(BaseModel):
+    scores: Dict[str, float]  # aptitude, technical, dsa, resume, overall
+    resume_results: Dict[str, Any]  # Full Q&A data
+    proctoring_analysis: Dict[str, Any]  # Alert count and summary
+    final_verdict: Literal["Hire", "Borderline", "Reject"]
     strengths: List[str]
     weaknesses: List[str]
-    overall_score: int
-    final_verdict: Literal["Hire", "Borderline", "Reject"]
     error: Optional[str] = None

@@ -42,6 +42,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# FORENSIC MIDDLEWARE - Capture raw request body for debugging
+@app.middleware("http")
+async def debug_report_payload(request, call_next):
+    if "/evaluation/report" in request.url.path:
+        try:
+            body = await request.body()
+            print(f"🔥 GORILLA RAW BODY: {body.decode()}")
+        except Exception as e:
+            print(f"🔥 GORILLA BODY ERROR: {e}")
+    response = await call_next(request)
+    return response
+
 # Include routers
 app.include_router(resume_routes.router)
 app.include_router(monitoring_routes.router)

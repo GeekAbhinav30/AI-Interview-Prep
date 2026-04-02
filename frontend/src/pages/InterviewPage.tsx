@@ -418,16 +418,27 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
 
   const generateFinalReport = async () => {
     try {
+      // PRE-FLIGHT PAYLOAD SANITIZATION
+      const payload = {
+        session_id: sessionId || "unknown_session",
+        mcq_results: aptitudeResults || {},
+        dsa_results: dsaResults || {},
+        resume_results: resumeResults || { responses: [] }
+      };
+      
+      console.log("🚀 GORILLA DEBUG: Sending Payload:", payload);
+      
       const response = await fetch(`${API_BASE}/evaluation/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          mcq_results: aptitudeResults,
-          dsa_results: dsaResults,
-          resume_results: resumeResults
-        })
+        body: JSON.stringify(payload)
       });
+      
+      if (!response.ok) {
+        console.error(`❌ GORILLA HTTP ERROR: ${response.status} ${response.statusText}`);
+        throw new Error(`Report generation failed: ${response.status}`);
+      }
+      
       const finalReport = await response.json();
       console.log("Final report:", finalReport);
       

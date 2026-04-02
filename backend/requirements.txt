@@ -6,7 +6,7 @@ python-dotenv
 # AI / NLP
 sentence-transformers
 faiss-cpu
-google-generativeai
+groq
 
 # Computer Vision
 opencv-python

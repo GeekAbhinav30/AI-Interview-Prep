@@ -1,16 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, TrendingUp, TrendingDown, Award, AlertTriangle, CheckCircle, XCircle, Clock, Code, Mic, FileText } from 'lucide-react';
+import { ChevronLeft, TrendingUp, TrendingDown, Award, CheckCircle, XCircle, Code, Mic, FileText } from 'lucide-react';
 
 interface DashboardProps {
   onBack: () => void;
 }
 
 interface FinalReport {
+  scores: {
+    aptitude: number;
+    technical: number;
+    dsa: number;
+    resume: number;
+    overall: number;
+  };
+  resume_results: {
+    responses: Array<{
+      question_index: number;
+      question?: string;
+      answer?: string;
+      relevance: number;
+      clarity: number;
+      completeness: number;
+      feedback: string;
+    }>;
+  };
+  proctoring_analysis: {
+    alert_count: number;
+    summary: string;
+  };
+  final_verdict: "Hire" | "Borderline" | "Reject";
   strengths: string[];
   weaknesses: string[];
-  overall_score: number;
-  final_verdict: "Hire" | "Borderline" | "Reject";
   error?: string;
 }
 
@@ -78,10 +99,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
     const state = location.state as { report?: FinalReport; results?: EvaluationResults };
     
     if (state?.report) {
+      // Error boundary check
+      if (!state.report || Object.keys(state.report).length === 0) {
+        console.error("Empty report data received");
+        navigate('/start-practicing');
+        return;
+      }
       setReport(state.report);
       setEvaluationResults(state.results ?? null);
     } else {
       // No data found, redirect back
+      console.error("No report data found in navigation state");
       navigate('/start-practicing');
       return;
     }
@@ -177,8 +205,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
               </div>
               
               <div className="mt-6">
-                <div className={`text-5xl font-bold ${getScoreColor(report.overall_score)}`}>
-                  {report.overall_score}%
+                <div className={`text-5xl font-bold ${getScoreColor(report.scores?.overall || 0)}`}>
+                  {report.scores?.overall || 0}%
                 </div>
                 <p className={`${t.textSecondary} mt-2`}>Overall Score</p>
               </div>
@@ -275,29 +303,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
               )}
 
               {/* Resume Results */}
-              {evaluationResults.resume_results && evaluationResults.resume_results.responses.length > 0 && (
+              {report.resume_results && report.resume_results.responses.length > 0 && (
                 <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-6 ${t.glowBlue} shadow-2xl`}>
                   <div className="flex items-center mb-4">
                     <Mic className="w-6 h-6 text-green-500 mr-3" />
                     <h2 className={`text-xl font-bold ${t.text}`}>Resume Interview Performance</h2>
                   </div>
                   <div className="space-y-4">
-                    {evaluationResults.resume_results.responses.map((response, index) => (
+                    {report.resume_results.responses.map((response, index) => (
                       <div key={index} className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'}`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                           <div>
-                            <div className={`text-2xl font-bold ${t.text}`}>{response.relevance}/10</div>
+                            <div className={`text-2xl font-bold ${t.text}`}>{response.relevance}/3</div>
                             <p className={`${t.textSecondary} text-xs`}>Relevance</p>
                           </div>
                           <div>
-                            <div className={`text-2xl font-bold ${t.text}`}>{response.clarity}/10</div>
+                            <div className={`text-2xl font-bold ${t.text}`}>{response.clarity}/3</div>
                             <p className={`${t.textSecondary} text-xs`}>Clarity</p>
                           </div>
                           <div>
-                            <div className={`text-2xl font-bold ${t.text}`}>{response.completeness}/10</div>
+                            <div className={`text-2xl font-bold ${t.text}`}>{response.completeness}/3</div>
                             <p className={`${t.textSecondary} text-xs`}>Completeness</p>
                           </div>
                         </div>
+                        {response.feedback && (
+                          <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-slate-200/50'}`}>
+                            <p className={`${t.textSecondary} text-sm`}>{response.feedback}</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
