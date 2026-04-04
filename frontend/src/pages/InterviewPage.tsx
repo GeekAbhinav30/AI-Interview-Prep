@@ -45,6 +45,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [mcqAnswers, setMcqAnswers] = useState<{ [key: number]: number }>({});
   const [dsaData, setDsaData] = useState<DSALogic | null>(null);
   const [dsaCode, setDsaCode] = useState<string>("");
+  const [questionExpanded, setQuestionExpanded] = useState<boolean>(true);
   
   // Evaluation results state
   const [aptitudeResults, setAptitudeResults] = useState<any>(null);
@@ -418,6 +419,31 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
 
   const generateFinalReport = async () => {
     try {
+      // 🦁 MASTER LION KING: RESOURCE MANAGEMENT
+      console.log("🔥 LION KING: Starting resource cleanup before report generation");
+      
+      // CRITICAL: Kill frontend webcam tracks
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        setMediaStream(null);
+        console.log("🔥 LION KING: Frontend webcam tracks stopped");
+      }
+      
+      // CRITICAL: Kill backend YOLO process
+      if (monitoringActive && sessionId) {
+        try {
+          await fetch(`${API_BASE}/stop_monitoring`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId })
+          });
+          setMonitoringActive(false);
+          console.log("🔥 LION KING: Backend YOLO process killed");
+        } catch (err) {
+          console.error("🔥 LION KING: Failed to kill backend YOLO:", err);
+        }
+      }
+      
       // PRE-FLIGHT PAYLOAD SANITIZATION
       const payload = {
         session_id: sessionId || "unknown_session",
@@ -449,7 +475,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
           results: {
             mcq_results: aptitudeResults,
             dsa_results: dsaResults,
-            resume_results: resumeResults
+            resume_results: finalReport.resume_results
           }
         } 
       });
@@ -567,33 +593,61 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
 
             {interviewMode === "dsa" && (
               <>
-                <div className="mb-6 text-center">
-                  <h2 className={`${t.text} font-bold tracking-tight mb-2`} style={{fontSize: '28px'}}>DSA Problem</h2>
-                  <p className={`${t.textSecondary} text-sm`}>Write your solution below</p>
-                </div>
                 {loading ? (
                   <div className="flex-1 flex items-center justify-center"><div className="text-center">Loading problem...</div></div>
                 ) : dsaData ? (
-                  <>
-                    <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-4 ${t.border} overflow-y-auto`} style={{maxHeight: '40vh'}}>
-                      <h3 className={`${t.text} font-bold mb-3`} style={{fontSize: '18px'}}>{dsaData.title}</h3>
-                      <p className={`${t.text} mb-4 whitespace-pre-wrap`} style={{fontSize: '14px', lineHeight: '1.6'}}>{dsaData.problem}</p>
-                      <div className="mb-3">
-                        <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '15px'}}>Constraints:</h4>
-                        <p className={`${t.textSecondary} text-sm whitespace-pre-wrap`}>{dsaData.constraints}</p>
-                      </div>
-                      <div>
-                        <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '15px'}}>Example:</h4>
-                        <pre className={`${t.textSecondary} text-xs bg-slate-900/30 p-3 rounded-lg overflow-x-auto`}>
-                          {typeof dsaData.example === 'object' && dsaData.example !== null ? JSON.stringify(dsaData.example, null, 2) : String(dsaData.example || '')}
-                        </pre>
+                  <div className="flex flex-col h-full">
+                    {/* 🦁 MASTER LION: Expandable Question Accordion */}
+                    <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl ${t.border} mb-4 transition-all duration-300`}>
+                      <button
+                        onClick={() => setQuestionExpanded(!questionExpanded)}
+                        className={`w-full p-4 flex items-center justify-between text-left hover:bg-opacity-80 transition-colors`}
+                      >
+                        <div className="flex items-center">
+                          <div className={`w-2 h-2 rounded-full mr-3 ${questionExpanded ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
+                          <h3 className={`${t.text} font-bold`} style={{fontSize: '16px'}}>{dsaData.title}</h3>
+                        </div>
+                        <div className={`transform transition-transform duration-300 ${questionExpanded ? 'rotate-180' : ''}`}>
+                          <svg className={`w-5 h-5 ${t.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+                      
+                      {/* Collapsible Content */}
+                      <div className={`overflow-hidden transition-all duration-300 ${questionExpanded ? 'max-h-96' : 'max-h-0'}`}>
+                        <div className="px-4 pb-4 border-t border-slate-700/50">
+                          <div className="pt-4">
+                            <p className={`${t.text} mb-4 whitespace-pre-wrap`} style={{fontSize: '14px', lineHeight: '1.6'}}>{dsaData.problem}</p>
+                            <div className="mb-3">
+                              <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '14px'}}>Constraints:</h4>
+                              <p className={`${t.textSecondary} text-sm whitespace-pre-wrap`}>{dsaData.constraints}</p>
+                            </div>
+                            <div>
+                              <h4 className={`${t.text} font-semibold mb-2`} style={{fontSize: '14px'}}>Example:</h4>
+                              <pre className={`${t.textSecondary} text-xs bg-slate-900/30 p-3 rounded-lg overflow-x-auto`}>
+                                {typeof dsaData.example === 'object' && dsaData.example !== null ? JSON.stringify(dsaData.example, null, 2) : String(dsaData.example || '')}
+                              </pre>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <textarea value={dsaCode} onChange={(e) => setDsaCode(e.target.value)} placeholder="Write your code here..." className={`w-full h-48 p-4 ${t.border} rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} backdrop-blur-xl font-mono text-sm`} style={{fontFamily: 'monospace'}} />
-                    <button onClick={handleNextSection} className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:scale-105 transition-all tracking-wide`} style={{fontSize: '16px', fontWeight: '600'}}>
-                      Next Section
-                    </button>
-                  </>
+                    
+                    {/* 🦁 MASTER LION: Smart Code Editor */}
+                    <div className="flex-1 flex flex-col">
+                      <textarea 
+                        value={dsaCode} 
+                        onChange={(e) => setDsaCode(e.target.value)} 
+                        placeholder="Write your code here..." 
+                        className={`flex-1 w-full p-4 ${t.border} rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} backdrop-blur-xl font-mono text-sm`} 
+                        style={{fontFamily: 'monospace', minHeight: '60vh'}} 
+                      />
+                      <button onClick={handleNextSection} className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:scale-105 transition-all tracking-wide`} style={{fontSize: '16px', fontWeight: '600'}}>
+                        Next Section
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-4 ${t.border} overflow-y-auto`} style={{maxHeight: '40vh'}}>

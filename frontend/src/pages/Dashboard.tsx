@@ -14,11 +14,23 @@ interface FinalReport {
     resume: number;
     overall: number;
   };
+  mcq_stats: {
+    aptitude: {
+      score: number;
+      total: number;
+      accuracy: number;
+    };
+    technical: {
+      score: number;
+      total: number;
+      accuracy: number;
+    };
+  };
   resume_results: {
     responses: Array<{
       question_index: number;
-      question?: string;
-      answer?: string;
+      question: string;
+      answer: string;
       relevance: number;
       clarity: number;
       completeness: number;
@@ -251,33 +263,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
           {evaluationResults && (
             <div className="space-y-6">
               {/* MCQ Results */}
-              {evaluationResults.mcq_results && (
+              {report.mcq_stats && (
                 <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-6 ${t.glowBlue} shadow-2xl`}>
                   <div className="flex items-center mb-4">
                     <FileText className="w-6 h-6 text-blue-500 mr-3" />
                     <h2 className={`text-xl font-bold ${t.text}`}>MCQ Performance</h2>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className={`text-3xl font-bold ${t.text}`}>{evaluationResults.mcq_results.score}</div>
-                      <p className={`${t.textSecondary} text-sm`}>Correct</p>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-3xl font-bold ${t.text}`}>{evaluationResults.mcq_results.total}</div>
-                      <p className={`${t.textSecondary} text-sm`}>Total</p>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-3xl font-bold ${getScoreColor(evaluationResults.mcq_results.accuracy)}`}>
-                        {evaluationResults.mcq_results.accuracy.toFixed(1)}%
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Aptitude Card */}
+                    <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-2xl p-6 ${t.glowBlue} shadow-xl`}>
+                      <div className="flex items-center mb-4">
+                        <TrendingUp className="w-6 h-6 text-blue-500 mr-3" />
+                        <h3 className={`text-lg font-bold ${t.text}`}>Aptitude Assessment</h3>
                       </div>
-                      <p className={`${t.textSecondary} text-sm`}>Accuracy</p>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className={`${t.textSecondary}`}>Score:</span>
+                          <span className={`font-bold ${t.text}`}>{report.mcq_stats.aptitude.score}/{report.mcq_stats.aptitude.total}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={`${t.textSecondary}`}>Accuracy:</span>
+                          <span className={`font-bold ${getScoreColor(report.mcq_stats.aptitude.accuracy)}`}>
+                            {report.mcq_stats.aptitude.accuracy.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Technical Card */}
+                    <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-2xl p-6 ${t.glowBlue} shadow-xl`}>
+                      <div className="flex items-center mb-4">
+                        <Code className="w-6 h-6 text-purple-500 mr-3" />
+                        <h3 className={`text-lg font-bold ${t.text}`}>Technical Assessment</h3>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className={`${t.textSecondary}`}>Score:</span>
+                          <span className={`font-bold ${t.text}`}>{report.mcq_stats.technical.score}/{report.mcq_stats.technical.total}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={`${t.textSecondary}`}>Accuracy:</span>
+                          <span className={`font-bold ${getScoreColor(report.mcq_stats.technical.accuracy)}`}>
+                            {report.mcq_stats.technical.accuracy.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* DSA Results */}
-              {evaluationResults.dsa_results && (
+              {report && report.scores && (
                 <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-6 ${t.glowBlue} shadow-2xl`}>
                   <div className="flex items-center mb-4">
                     <Code className="w-6 h-6 text-purple-500 mr-3" />
@@ -285,18 +322,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={`${t.textSecondary}`}>Verdict:</span>
-                      <span className={`font-bold ${getVerdictColor(evaluationResults.dsa_results.verdict)}`}>
-                        {evaluationResults.dsa_results.verdict.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={`${t.textSecondary}`}>Time Complexity:</span>
-                      <span className={`${t.text}`}>{evaluationResults.dsa_results.time_complexity}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={`${t.textSecondary}`}>Space Complexity:</span>
-                      <span className={`${t.text}`}>{evaluationResults.dsa_results.space_complexity}</span>
+                      <span className={`${t.textSecondary}`}>DSA Score:</span>
+                      <span className={`font-bold ${getScoreColor(report.scores.dsa)}`}>{report.scores.dsa}%</span>
                     </div>
                   </div>
                 </div>
@@ -312,6 +339,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
                   <div className="space-y-4">
                     {report.resume_results.responses.map((response, index) => (
                       <div key={index} className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'}`}>
+                        {/* Question Header */}
+                        <div className="mb-3">
+                          <div className={`text-sm font-semibold ${t.textSecondary} mb-1`}>
+                            Question {response.question_index + 1}
+                          </div>
+                          <div className={`text-base ${t.text} font-medium`}>
+                            {response.question}
+                          </div>
+                        </div>
+                        
+                        {/* Answer Transcript */}
+                        <div className="mb-3">
+                          <div className={`text-sm font-semibold ${t.textSecondary} mb-1`}>
+                            Your Answer
+                          </div>
+                          <div className={`text-base ${t.text} italic ${isDark ? 'bg-slate-700/30' : 'bg-slate-200/50'} p-3 rounded-lg`}>
+                            {response.answer}
+                          </div>
+                        </div>
+                        
+                        {/* Metrics */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                           <div>
                             <div className={`text-2xl font-bold ${t.text}`}>{response.relevance}/3</div>
@@ -326,9 +374,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
                             <p className={`${t.textSecondary} text-xs`}>Completeness</p>
                           </div>
                         </div>
+                        
+                        {/* AI Feedback */}
                         {response.feedback && (
                           <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-slate-200/50'}`}>
-                            <p className={`${t.textSecondary} text-sm`}>{response.feedback}</p>
+                            <div className={`text-sm font-semibold ${t.textSecondary} mb-2`}>
+                              AI Feedback
+                            </div>
+                            <p className={`${t.text} text-sm`}>{response.feedback}</p>
                           </div>
                         )}
                       </div>
@@ -336,6 +389,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onBack }) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Proctoring Analysis */}
+          {report.proctoring_analysis && (
+            <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-6 ${t.glowBlue} shadow-2xl`}>
+              <div className="flex items-center mb-4">
+                <div className="w-6 h-6 text-orange-500 mr-3">🛡️</div>
+                <h2 className={`text-xl font-bold ${t.text}`}>Proctoring Integrity Report</h2>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className={`${t.textSecondary}`}>Alert Count:</span>
+                  <span className={`font-bold ${report.proctoring_analysis.alert_count > 5 ? 'text-red-500' : report.proctoring_analysis.alert_count > 2 ? 'text-yellow-500' : 'text-green-500'}`}>
+                    {report.proctoring_analysis.alert_count} alerts
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className={`${t.textSecondary}`}>Status:</span>
+                  <span className={`font-bold ${report.proctoring_analysis.alert_count > 5 ? 'text-red-500' : report.proctoring_analysis.alert_count > 2 ? 'text-yellow-500' : 'text-green-500'}`}>
+                    {report.proctoring_analysis.alert_count === 0 ? 'Clear' : 
+                     report.proctoring_analysis.alert_count <= 2 ? 'Minor Issues' :
+                     report.proctoring_analysis.alert_count <= 5 ? 'Moderate Concerns' : 'Flagged'}
+                  </span>
+                </div>
+                <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-slate-200/50'}`}>
+                  <p className={`${t.textSecondary} text-sm`}>{report.proctoring_analysis.summary}</p>
+                </div>
+              </div>
             </div>
           )}
 

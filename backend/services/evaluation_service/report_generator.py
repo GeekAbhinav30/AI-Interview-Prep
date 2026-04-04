@@ -119,6 +119,65 @@ def recover_resume_data_from_cache() -> dict:
         return {"responses": []}
 
 
+def enhance_resume_data(resume_results: dict) -> dict:
+    """Enhance resume data with question text and answers from cache"""
+    if not resume_results or not resume_results.get("responses"):
+        return {"responses": []}
+    
+    enhanced_responses = []
+    questions = []
+    user_answers = []
+    
+    # Try to recover original questions from cache
+    try:
+        if os.path.exists("llm_cache.json"):
+            with open("llm_cache.json", 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Look for question generation cache entry
+            for cache_key, cache_value in cache_data.items():
+                if "questions" in cache_value and isinstance(cache_value, list):
+                    questions = cache_value
+                    print(f"🔍 Found {len(questions)} original questions in cache")
+                    break
+            
+            # Look for user answers/transcripts in cache
+            for cache_key, cache_value in cache_data.items():
+                if isinstance(cache_value, dict) and "responses" in cache_value:
+                    cached_responses = cache_value["responses"]
+                    if cached_responses and "answer" in cached_responses[0]:
+                        user_answers = [resp.get("answer", "") for resp in cached_responses]
+                        print(f"🔍 Found {len(user_answers)} user answers in cache")
+                        break
+            
+            # Build safe response objects
+            for i, response in enumerate(resume_results.get("responses", [])):
+                q_index = response.get("question_index", i)
+                
+                enhanced_responses.append({
+                    "question_index": q_index,
+                    
+                    # ✅ ensure question always present
+                    "question": response.get("question") 
+                                or (questions[q_index] if q_index < len(questions) else "Question not available"),
+                    
+                    # ✅ ensure answer always present
+                    "answer": response.get("answer") 
+                              or (user_answers[q_index] if q_index < len(user_answers) else ""),
+                    
+                    # ✅ evaluation fields
+                    "relevance": response.get("relevance", 0),
+                    "clarity": response.get("clarity", 0),
+                    "completeness": response.get("completeness", 0),
+                    "feedback": response.get("feedback", "")
+                })
+    except Exception as e:
+        print(f"⚠️ Resume enhancement error: {e}")
+        enhanced_responses = resume_results.get("responses", [])
+    
+    return {"responses": enhanced_responses}
+
+
 def generate_final_report(
     mcq_results: dict,
     dsa_results: dict,
@@ -164,34 +223,28 @@ def generate_final_report(
             ])
 
         judge_prompt = f"""
-You are a senior technical interviewer providing qualitative feedback.
+🦁 MASTER LION KING: LLM Holistic Scoring with Dynamic Score Injection
 
-INTERVIEW RESULTS:
-- Aptitude Score: {aptitude_score}%
-- Technical Score: {technical_score}%
-- DSA Score: {dsa_score}%
-- Resume Score: {resume_score}%
-- Overall Score: {overall_score}%
+You are the Senior Technical Interviewer. Based on the candidate's actual performance data, generate an overall_score out of 100.
 
-DSA VERDICT: {dsa_results.get('verdict', 'fail')}
+CANDIDATE PERFORMANCE DATA:
+- Aptitude accuracy: {aptitude_score}%
+- Technical accuracy: {technical_score}%
+- DSA code score: {dsa_score}%
+- Resume evaluation average: {resume_score}%
 
-RESUME Q&A SAMPLES:
-{resume_qa_summary}
+🦁 MASTER LION KING CRITICAL INSTRUCTIONS:
+1. Generate an overall_score out of 100 (e.g., 82.5, 91.0) based STRICTLY on the data provided
+2. DO NOT hardcode perfect scores
+3. DO NOT hallucinate a score out of 10
+4. Base the final percentage on weighted average: Aptitude(25%) + Technical(25%) + DSA(30%) + Resume(20%)
 
-PROCTORING: {proctoring_analysis['summary']}
-
-TASKS:
-1. Provide 3-5 key strengths based on the scores above
-2. Provide 3-5 areas for improvement based on weaknesses
-3. Give a final verdict: "Hire", "Borderline", or "Reject"
-
-CRITICAL: Do NOT invent or calculate any scores. Use only the scores provided above.
-
-Return ONLY valid JSON:
+Return ONLY valid JSON with:
 {{
-  "strengths": [string],
-  "weaknesses": [string],
-  "final_verdict": "Hire|Borderline|Reject"
+  "strengths": ["strength1", "strength2", "strength3"],
+  "weaknesses": ["weakness1", "weakness2", "weakness3"],
+  "final_verdict": "Hire" or "Borderline" or "Reject",
+  "overall_score": number
 }}
 """
         
@@ -226,7 +279,11 @@ Return ONLY valid JSON:
             "resume": resume_score,
             "overall": overall_score
         },
-        "resume_results": resume_results,  # Full Q&A data restored
+        "mcq_stats": {
+            "aptitude": mcq_results if mcq_results else {"score": 0, "total": 0, "accuracy": 0},
+            "technical": mcq_results if mcq_results else {"score": 0, "total": 0, "accuracy": 0}
+        },
+        "resume_results": enhance_resume_data(resume_results),  # Enhanced Q&A data
         "proctoring_analysis": proctoring_analysis,
         "final_verdict": final_verdict,
         "strengths": strengths,

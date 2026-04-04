@@ -47,28 +47,18 @@ def evaluate_resume_answers(
     responses = []
     for i, qa_pair in enumerate(qa_pairs):
         prompt = f"""
-You are an interview evaluator.
+You are evaluating a candidate's interview response. Return ONLY valid JSON containing:
 
-STRICT RULES:
-- Return ONLY valid JSON
-- No markdown
-- No explanations
-- Must be parsable by json.loads()
+1. `relevance` (1-3 scale)
+2. `clarity` (1-3 scale) 
+3. `completeness` (1-3 scale)
+4. `ai_feedback` (exactly ONE concise sentence)
 
-SCHEMA:
-{{
-  "question_index": {i},
-  "relevance": number,
-  "clarity": number,
-  "completeness": number,
-  "feedback": string
-}}
+QUESTION: {qa_pair['question']}
+CANDIDATE ANSWER: {qa_pair['answer']}
 
-EVALUATION CRITERIA:
-- Relevance (1-3): How well does answer address the specific question asked?
-- Clarity (1-3): How clear and articulate is the response?
-- Completeness (1-3): How comprehensive is the answer?
-
+ MASTER LION KING 1-LINER EFFICIENCY: Keep `ai_feedback` to exactly ONE concise sentence. If the candidate's answer is perfect, simply output 'Perfect answer, no improvements needed.' Do not over-explain.
+Return ONLY valid JSON. No markdown formatting.
 SCORING RULES:
 - If answer is generic/unrelated to question: relevance = 1
 - If answer directly addresses question specifics: relevance = 2-3
@@ -96,7 +86,7 @@ Evaluate this specific Q&A pair using the criteria above.
                 "relevance": response_data.get("relevance", 2),
                 "clarity": response_data.get("clarity", 2),
                 "completeness": response_data.get("completeness", 2),
-                "feedback": response_data.get("feedback", "Evaluation completed")
+                "feedback": response_data.get("ai_feedback", "Evaluation completed")
             }
             responses.append(response)
             
