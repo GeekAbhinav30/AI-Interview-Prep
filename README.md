@@ -290,25 +290,26 @@ graph LR
 
 ---
 
-## 👨‍💻 Author
+## Contributors
 
-<div align="center">
+Harsh Rawte
+- Backend development
+- Groq API integration
+- Feature enhancements and final system implementation
+- Speech-to-Text (STT) integration
+- Video proctoring functionality
+- Interview evaluation report generation
 
-**Harsh Rawte**
+Abhinav Upadhyay
+- Initial frontend development
+- Resume upload and parsing workflow
+- Resume-aware interview question generation
+- Initial Gemini API integration
+- LLM evaluation, troubleshooting, and resource optimization 
 
-*Final Year B.Tech Student | AI Enthusiast*
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/harshhrawte)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/harshhrawte)
-
-</div>
+### Team Contributors
+Additional contributions included system improvements, testing, integration support, and collaborative development efforts across the project.
 
 ---
 
-<div align="center">
-
-### ⭐ If you found this project helpful, please consider giving it a star!
-
-**Made with ❤️ and AI**
-
-</div>
+Final Year B.Tech Project focused on AI-powered interview assistance using Large Language Models, resume parsing, adaptive interview question generation, speech processing, and interview evaluation systems.
