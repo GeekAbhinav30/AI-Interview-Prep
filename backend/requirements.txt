@@ -1,8 +1,21 @@
+# frameworks
 fastapi
 uvicorn
-PyPDF2
-faiss-cpu
-sentence-transformers
-google-generativeai
-python-multipart
 python-dotenv
+
+# AI / NLP
+sentence-transformers
+faiss-cpu
+groq
+
+# Computer Vision
+opencv-python
+mediapipe
+
+# ML / Torch
+torch
+torchvision
+numpy
+
+# Utilities
+pydantic
